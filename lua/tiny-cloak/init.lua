@@ -9,6 +9,11 @@ local default_config = {
 local namespace = vim.api.nvim_create_namespace('tiny-cloak')
 local enabled = true
 
+-- Preview state tracking
+local preview_active_bufnr = nil
+local preview_line_num = nil
+local preview_extmarks = {}
+
 -- Shared patterns for JSON/YAML sensitive keys
 local SENSITIVE_KEY_PATTERNS = {
   'api_key',
@@ -254,11 +259,91 @@ function M.cloak_line(bufnr, line_num, start_col, end_col)
   local cloak_char = config.cloak_character
   local cloak_text = string.rep(cloak_char, line_length)
 
-  vim.api.nvim_buf_set_extmark(bufnr, namespace, line_num, start_col, {
+  return vim.api.nvim_buf_set_extmark(bufnr, namespace, line_num, start_col, {
     end_col = end_col,
     virt_text = { { cloak_text, 'Comment' } },
     virt_text_pos = 'overlay',
   })
+end
+
+local function clear_preview()
+  if preview_active_bufnr and preview_line_num ~= nil and preview_extmarks then
+    -- Restore original extmarks
+    for _, extmark_info in ipairs(preview_extmarks) do
+      vim.api.nvim_buf_set_extmark(
+        preview_active_bufnr,
+        namespace,
+        preview_line_num,
+        extmark_info.start_col,
+        {
+          end_col = extmark_info.end_col,
+          virt_text = { { extmark_info.cloak_text, 'Comment' } },
+          virt_text_pos = 'overlay',
+        }
+      )
+    end
+
+    preview_active_bufnr = nil
+    preview_line_num = nil
+    preview_extmarks = {}
+  end
+end
+
+local function get_line_extmarks(bufnr, line_num)
+  local extmarks = vim.api.nvim_buf_get_extmarks(
+    bufnr,
+    namespace,
+    { line_num, 0 },
+    { line_num, -1 },
+    { details = true }
+  )
+
+  local cloak_extmarks = {}
+  for _, extmark in ipairs(extmarks) do
+    local _, _, start_col, end_col, details = unpack(extmark)
+    if details.virt_text and #details.virt_text > 0 then
+      table.insert(cloak_extmarks, {
+        start_col = start_col,
+        end_col = end_col,
+        cloak_text = details.virt_text[1][1],
+      })
+    end
+  end
+
+  return cloak_extmarks
+end
+
+function M.preview_line()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local cursor_pos = vim.api.nvim_win_get_cursor(0)
+  local line_num = cursor_pos[1] - 1
+
+  -- Get extmarks on current line
+  local line_extmarks = get_line_extmarks(bufnr, line_num)
+
+  -- Return early if no cloaked content on this line
+  if #line_extmarks == 0 then
+    clear_preview()
+    return
+  end
+
+  -- Clear previous preview if active on different line
+  if preview_active_bufnr and (preview_active_bufnr ~= bufnr or preview_line_num ~= line_num) then
+    clear_preview()
+  end
+
+  -- If preview already active on this line, do nothing
+  if preview_active_bufnr == bufnr and preview_line_num == line_num then
+    return
+  end
+
+  -- Store extmark info and clear them to reveal content
+  preview_active_bufnr = bufnr
+  preview_line_num = line_num
+  preview_extmarks = line_extmarks
+
+  -- Clear all cloak extmarks on this line
+  vim.api.nvim_buf_clear_namespace(bufnr, namespace, line_num, line_num + 1)
 end
 
 function M.setup(opts)
@@ -297,6 +382,7 @@ function M.setup(opts)
   vim.api.nvim_create_user_command('CloakToggle', M.toggle, {})
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
+  vim.api.nvim_create_user_command('CloakPreviewLine', M.preview_line, {})
 end
 
 return M
