@@ -9,10 +9,10 @@ test-file:
 	nvim --headless -c "luafile test/runner.lua" -c "qall!"
 
 format:
-	stylua lua/ test/
+	stylua .
 
 lint:
-	stylua --check lua/ test/
+	stylua --check .
 
 clean:
 	rm -rf .luarocks

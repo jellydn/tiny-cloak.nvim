@@ -4,7 +4,7 @@
 package.path = 'lua/?.lua;lua/?/init.lua;test/?.lua;' .. package.path
 
 if vim and vim.cmd then
-  vim.cmd("luafile test/runner.lua")
+  vim.cmd('luafile test/runner.lua')
 else
   -- State tracking for mocks
   local mock_state = {
@@ -34,7 +34,9 @@ else
   -- Mock vim for regular Lua (used by LuaRocks)
   _G.vim = {
     api = {
-      nvim_create_buf = function() return 1 end,
+      nvim_create_buf = function()
+        return 1
+      end,
       nvim_buf_set_name = function(bufnr, name)
         mock_state.buf_name = name
       end,
@@ -46,8 +48,12 @@ else
       nvim_buf_set_lines = function(bufnr, start, end_, strict, lines)
         mock_state.lines = lines
       end,
-      nvim_buf_get_lines = function() return mock_state.lines or {} end,
-      nvim_buf_is_valid = function() return true end,
+      nvim_buf_get_lines = function()
+        return mock_state.lines or {}
+      end,
+      nvim_buf_is_valid = function()
+        return true
+      end,
       nvim_buf_delete = function() end,
       nvim_buf_get_extmarks = function(bufnr, ns, start, end_, opts)
         return mock_state.extmarks
@@ -58,23 +64,37 @@ else
       nvim_buf_clear_namespace = function(bufnr, ns, start, end_)
         mock_state.extmarks = {}
       end,
-      nvim_buf_get_name = function(bufnr) return mock_state.buf_name end,
+      nvim_buf_get_name = function(bufnr)
+        return mock_state.buf_name
+      end,
       nvim_buf_get_option = function(bufnr, option)
-        if option == 'filetype' then return mock_state.buf_filetype end
+        if option == 'filetype' then
+          return mock_state.buf_filetype
+        end
         return nil
       end,
-      nvim_list_bufs = function() return {} end,
-      nvim_buf_is_loaded = function(bufnr) return true end,
-      nvim_get_current_buf = function() return 1 end,
+      nvim_list_bufs = function()
+        return {}
+      end,
+      nvim_buf_is_loaded = function(bufnr)
+        return true
+      end,
+      nvim_get_current_buf = function()
+        return 1
+      end,
       nvim_create_namespace = function(name)
         if not mock_state.namespace then
           mock_state.namespace = math.random(1, 100000)
         end
         return mock_state.namespace
       end,
-      nvim_get_commands = function() return {} end,
+      nvim_get_commands = function()
+        return {}
+      end,
       nvim_create_autocmd = function() end,
-      nvim_create_augroup = function() return 'TinyCloak' end,
+      nvim_create_augroup = function()
+        return 'TinyCloak'
+      end,
       nvim_create_user_command = function() end,
       nvim_set_current_buf = function() end,
     },
@@ -84,7 +104,9 @@ else
       end,
     },
     fs = {
-      basename = function(path) return path:match('([^/]+)$') or path end,
+      basename = function(path)
+        return path:match('([^/]+)$') or path
+      end,
     },
     bo = {},
     cmd = function() end,
@@ -104,8 +126,16 @@ else
       end
       return result
     end,
-    uv = { os_uname = function() return { sysname = 'Linux' } end },
-    loop = { os_uname = function() return { sysname = 'Linux' } end },
+    uv = {
+      os_uname = function()
+        return { sysname = 'Linux' }
+      end,
+    },
+    loop = {
+      os_uname = function()
+        return { sysname = 'Linux' }
+      end,
+    },
     opt = { buflisted = {}, buftype = {} },
     g = {},
   }
@@ -115,7 +145,9 @@ else
   local passed, failed = 0, 0
 
   local function assert(condition, message)
-    if not condition then error(message or 'Assertion failed') end
+    if not condition then
+      error(message or 'Assertion failed')
+    end
   end
 
   local function test(name, fn)
@@ -171,5 +203,9 @@ else
   print('\n' .. string.rep('=', 50))
   print(string.format('Results: %d passed, %d failed', passed, failed))
 
-  if failed > 0 then os.exit(1) else os.exit(0) end
+  if failed > 0 then
+    os.exit(1)
+  else
+    os.exit(0)
+  end
 end
