@@ -63,7 +63,8 @@ luarocks test tiny-cloak.nvim-1.0.0-1.rockspec
 ### File Structure
 
 - Main module: `lua/tiny-cloak/init.lua`
-- Tests: `test/plugin_spec.lua`
+- Test entry: `test.lua` (LuaRocks test script)
+- Tests: `test/runner.lua`
 - Plugin entry: `plugin/tiny-cloak.nvim.lua`
 - Documentation: `doc/tiny-cloak.nvim.txt`
 
@@ -172,6 +173,7 @@ vim.api.nvim_create_autocmd({ 'BufEnter', 'BufRead' }, {
 - Always create a fresh buffer for each test
 - Tests use `os.exit()` for proper exit codes
 - The `.busted` file configures nlua as the Lua interpreter
+- LuaRocks uses test.lua as the test script entry point
 
 ### Documentation
 
