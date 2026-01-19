@@ -1,0 +1,22 @@
+# Ralph Progress Log
+Started: Mon Jan 19 20:30:13 +08 2026
+---
+
+## Codebase Patterns
+- Plugin module structure: lua/tiny-cloak/init.lua for main module
+- Default config includes file_patterns and cloak_character fields
+- Use vim.tbl_deep_extend for merging user config with defaults
+- Runtimepath (rtp) must include project root for require() to work
+
+## Mon Jan 19 20:38:00 +08 2026 - US-001
+- Implemented setup() function with default configuration
+- Created lua/tiny-cloak/init.lua with M.setup() and default_config
+- Verified plugin loads without errors with proper rtp configuration
+- Ran stylua for formatting and luac for syntax validation
+- Files changed: lua/tiny-cloak/init.lua
+- **Learnings for future iterations:**
+  - Neovim requires rtp+=/path to find lua modules via require()
+  - package.path can also be set explicitly: lua/?.lua;lua/?/init.lua
+  - Use --headless mode for testing lua code without opening UI
+  - selene not installed, but lua-language-server available for typechecking
+---
