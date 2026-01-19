@@ -1,0 +1,25 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#1a1b26" stroke="#7aa2f7" stroke-width="3"/>
+
+  <!-- File documents (representing .env, JSON, YAML) -->
+  <!-- File 1 - back -->
+  <rect x="55" y="50" width="40" height="50" rx="3" fill="#414868" stroke="#7aa2f7" stroke-width="2"/>
+  <line x1="65" y1="65" x2="85" y2="65" stroke="#7aa2f7" stroke-width="2" stroke-linecap="round"/>
+  <line x1="65" y1="75" x2="85" y2="75" stroke="#7aa2f7" stroke-width="2" stroke-linecap="round"/>
+  <line x1="65" y1="85" x2="75" y2="85" stroke="#7aa2f7" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- File 2 - front -->
+  <rect x="85" y="70" width="45" height="55" rx="3" fill="#24283b" stroke="#bb9af7" stroke-width="2"/>
+  <line x1="95" y1="85" x2="120" y2="85" stroke="#bb9af7" stroke-width="2" stroke-linecap="round"/>
+  <line x1="95" y1="95" x2="120" y2="95" stroke="#bb9af7" stroke-width="2" stroke-linecap="round"/>
+  <line x1="95" y1="105" x2="110" y2="105" stroke="#bb9af7" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Masking asterisk pattern overlay on front file -->
+  <text x="108" y="115" font-family="monospace" font-size="10" fill="#9ece6a" text-anchor="middle">***</text>
+
+  <!-- Small eye icon at top -->
+  <circle cx="100" cy="38" r="8" fill="#7aa2f7"/>
+  <circle cx="100" cy="38" r="4" fill="#1a1b26"/>
+  <circle cx="102" cy="36" r="1.5" fill="#7aa2f7"/>
+</svg>

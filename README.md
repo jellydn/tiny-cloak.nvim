@@ -1,5 +1,9 @@
 # tiny-cloak.nvim
 
+<p align="center">
+  <img src="assets/logo.svg" alt="tiny-cloak logo" width="200" height="200"/>
+</p>
+
 [![License](https://img.shields.io/github/license/jellydn/tiny-cloak.nvim?style=for-the-badge&logo=starship&color=ee999f&logoColor=D9E0EE&labelColor=302D41)](https://github.com/jellydn/tiny-cloak.nvim/blob/main/LICENSE)
 [![Stars](https://img.shields.io/github/stars/jellydn/tiny-cloak.nvim?style=for-the-badge&logo=starship&color=c69ff5&logoColor=D9E0EE&labelColor=302D41)](https://github.com/jellydn/tiny-cloak.nvim/stargazers)
 [![Issues](https://img.shields.io/github/issues/jellydn/tiny-cloak.nvim?style=for-the-badge&logo=bilibili&color=F5E0DC&logoColor=D9E0EE&labelColor=302D41)](https://github.com/jellydn/tiny-cloak.nvim/issues)
@@ -49,8 +53,8 @@ The plugin works automatically once installed. Open any `.env`, `.json`, `.yaml`
 
 ```env
 # Before                          # After (displayed)
-API_KEY=sk-abc123xyz              API_KEY=***************
-SECRET_TOKEN=super-secret         SECRET_TOKEN=************
+API_KEY=sk-example                API_KEY=***************
+SECRET_TOKEN=example-secret       SECRET_TOKEN=************
 ```
 
 ## ⌨️ Commands
