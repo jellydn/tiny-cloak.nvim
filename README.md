@@ -59,16 +59,51 @@ SECRET_TOKEN=example-secret       SECRET_TOKEN=************
 
 ## ⌨️ Commands
 
-| Command         | Description                                  |
-| --------------- | -------------------------------------------- |
-| `:CloakToggle`  | Toggle cloaking on/off globally              |
-| `:CloakEnable`  | Enable cloaking (no-op if already enabled)   |
-| `:CloakDisable` | Disable cloaking (no-op if already disabled) |
+| Command               | Description                                  |
+| --------------------- | -------------------------------------------- |
+| `:CloakToggle`        | Toggle cloaking on/off globally              |
+| `:CloakEnable`        | Enable cloaking (no-op if already enabled)   |
+| `:CloakDisable`       | Disable cloaking (no-op if already disabled) |
+| `:CloakPreviewLine`   | Reveal cloaked content on current line       |
+| `:CloakPreviewToggle` | Toggle preview on current line               |
 
-### Recommended Keymap
+### Recommended Keymaps
 
 ```lua
+-- Toggle cloaking globally
 vim.keymap.set("n", "<leader>ct", "<cmd>CloakToggle<cr>", { desc = "Toggle cloak" })
+
+-- Preview current line (reveals cloaked content)
+vim.keymap.set("n", "<leader>cp", "<cmd>CloakPreviewLine<cr>", { desc = "Preview line" })
+
+-- Toggle preview on current line
+vim.keymap.set("n", "<leader>cP", "<cmd>CloakPreviewToggle<cr>", { desc = "Toggle preview" })
+```
+
+## 👁️ Preview Feature
+
+The preview feature lets you temporarily reveal cloaked values for editing or verification:
+
+- **Line Preview**: `:CloakPreviewLine` reveals cloaked content on the current line
+- **Toggle Preview**: `:CloakPreviewToggle` toggles between reveal and cloak states
+- **Auto-recloak**: When exiting insert mode or leaving the buffer, values are automatically re-cloaked
+- **Normal Mode**: All preview commands work in normal mode without entering insert mode
+
+### Example Usage
+
+```env
+# Original file content
+API_KEY=sk-1234567890abcdef
+SECRET_TOKEN=my-secret-token
+DATABASE_URL=postgresql://user:password@localhost:5432/db
+
+# With cloaking applied
+API_KEY=********************
+SECRET_TOKEN=**************
+DATABASE_URL=postgresql://user:********@localhost:5432/db
+
+# After using :CloakPreviewToggle on line with API_KEY
+API_KEY=sk-1234567890abcdef  # Revealed for editing
 ```
 
 ## ⚙️ Configuration

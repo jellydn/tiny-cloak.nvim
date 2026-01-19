@@ -1,60 +1,118 @@
-*nvim-plugin-template.nvim.txt*  For NVIM v0.8.0 Last change: 2025 February 12
+*tiny-cloak.nvim.txt*    For NVIM v0.8.0 Last change: 2025 January 20
 
 ==============================================================================
-Table of Contents                *nvim-plugin-template.nvim-table-of-contents*
+Table of Contents                         *tiny-cloak.nvim-table-of-contents*
 
-1. nvim-plugin-template       |nvim-plugin-template.nvim-nvim-plugin-template|
-  - Usage               |nvim-plugin-template.nvim-nvim-plugin-template-usage|
-  - Format             |nvim-plugin-template.nvim-nvim-plugin-template-format|
-  - Test                 |nvim-plugin-template.nvim-nvim-plugin-template-test|
-  - CI                     |nvim-plugin-template.nvim-nvim-plugin-template-ci|
-  - More                 |nvim-plugin-template.nvim-nvim-plugin-template-more|
-  - License MIT   |nvim-plugin-template.nvim-nvim-plugin-template-license-mit|
+1. tiny-cloak.nvim            |tiny-cloak.nvim-tiny-cloak.nvim|
+  - Usage                     |tiny-cloak.nvim-tiny-cloak.nvim-usage|
+  - Commands                  |tiny-cloak.nvim-tiny-cloak.nvim-commands|
+  - Configuration             |tiny-cloak.nvim-tiny-cloak.nvim-configuration|
+  - Preview Feature           |tiny-cloak.nvim-tiny-cloak.nvim-preview|
+  - Lua API                   |tiny-cloak.nvim-tiny-cloak.nvim-lua-api|
 
 ==============================================================================
-1. nvim-plugin-template       *nvim-plugin-template.nvim-nvim-plugin-template*
+1. tiny-cloak.nvim                         *tiny-cloak.nvim-tiny-cloak.nvim*
 
-Neovim plugin template; includes automatic documentation generation from
-README, integration tests with Busted, and linting with Stylua
+A lightweight Neovim plugin that masks sensitive data (API keys, secrets,
+tokens) in `.env`, JSON, and YAML files. Prevents accidental exposure of
+credentials during screen sharing, demos, or pair programming.
 
+USAGE                                    *tiny-cloak.nvim-tiny-cloak.nvim-usage*
 
-USAGE                   *nvim-plugin-template.nvim-nvim-plugin-template-usage*
+The plugin works automatically once installed. Open any `.env`, `.json`,
+`.yaml`, or `.yml` file and sensitive values will be masked:
 
-1. Click `use this template` button generate a repo on your github.
-2. Clone your plugin repo. Open terminal then cd plugin directory.
-3. Run `python3 rename.py your-plugin-name`. This will replace all `nvim-plugin-template` to your `plugin-name`.
-Then it will prompt you input `y` or `n` to remove example codes in `init.lua` and
-`test/plugin_spec.lua`. If you are familiar this repo just input `y`. If you are looking at this template for the first time I suggest you inspect the contents. After this step `rename.py` will also auto-remove.
+Before:                                  After (displayed):
+API_KEY=sk-example                       API_KEY=***************
+SECRET_TOKEN=example-secret               SECRET_TOKEN=************
 
-Now you have a clean plugin environment. Enjoy!
+==============================================================================
+COMMANDS                               *tiny-cloak.nvim-tiny-cloak.nvim-commands*
 
+*:CloakToggle*
+    Toggle cloaking on/off globally
 
-FORMAT                 *nvim-plugin-template.nvim-nvim-plugin-template-format*
+*:CloakEnable*
+    Enable cloaking (no-op if already enabled)
 
-The CI uses `stylua` to format the code; customize the formatting by editing
-`.stylua.toml`.
+*:CloakDisable*
+    Disable cloaking (no-op if already disabled)
 
+*:CloakPreviewLine*
+    Reveal cloaked content on current line
 
-TEST                     *nvim-plugin-template.nvim-nvim-plugin-template-test*
+*:CloakPreviewToggle*
+    Toggle preview on current line
 
-See Running tests locally
-<https://github.com/nvim-neorocks/nvim-busted-action?tab=readme-ov-file#running-tests-locally>
+==============================================================================
+CONFIGURATION                         *tiny-cloak.nvim-tiny-cloak.nvim-configuration*
 
+Setup the plugin with optional configuration: >
 
-CI                         *nvim-plugin-template.nvim-nvim-plugin-template-ci*
+    require("tiny-cloak").setup({
+      -- Masking character
+      cloak_character = "*", -- default
 
-- Auto generates doc from README.
-- Runs the nvim-busted-action <https://github.com/nvim-neorocks/nvim-busted-action> for test.
-- Lints with `stylua`.
+      -- File patterns to cloak
+      file_patterns = { ".env*", "*.json", "*.yaml", "*.yml" }, -- default
 
+      -- Key patterns to match for cloaking
+      key_patterns = { "API_KEY", "SECRET", "PASSWORD", "TOKEN", "CREDENTIAL", "AUTH" }, -- default
+    })
+<
 
-MORE                     *nvim-plugin-template.nvim-nvim-plugin-template-more*
+==============================================================================
+PREVIEW FEATURE                         *tiny-cloak.nvim-tiny-cloak.nvim-preview*
 
-To see this template in action, take a look at my other plugins.
+The preview feature lets you temporarily reveal cloaked values for editing or
+verification.
 
+*Line Preview*
+    `:CloakPreviewLine` reveals cloaked content on current line
 
-LICENSE MIT       *nvim-plugin-template.nvim-nvim-plugin-template-license-mit*
+*Toggle Preview*
+    `:CloakPreviewToggle` toggles between reveal and cloak states
 
-Generated by panvimdoc <https://github.com/kdheepak/panvimdoc>
+*Auto-recloak*
+    When exiting insert mode or leaving the buffer, values are automatically
+    re-cloaked
+
+*Normal Mode*
+    All preview commands work in normal mode without requiring insert mode
+
+Example Usage: >
+
+    # Original file content
+    API_KEY=sk-1234567890abcdef
+    SECRET_TOKEN=my-secret-token
+
+    # With cloaking applied
+    API_KEY=********************
+    SECRET_TOKEN=**************
+
+    # After using :CloakPreviewToggle on line with API_KEY
+    API_KEY=sk-1234567890abcdef  # Revealed for editing
+<
+
+==============================================================================
+LUA API                                   *tiny-cloak.nvim-tiny-cloak.nvim-lua-api*
+
+require('tiny-cloak').preview_line()
+    Reveal cloaked content on current line
+
+require('tiny-cloak').preview_toggle()
+    Toggle preview on current line
+
+require('tiny-cloak').cloak_buffer(bufnr?)
+    Apply cloaking to buffer (current buffer if bufnr not provided)
+
+require('tiny-cloak').toggle()
+    Toggle cloaking on/off globally
+
+require('tiny-cloak').enable()
+    Enable cloaking globally
+
+require('tiny-cloak').disable()
+    Disable cloaking globally
 
 vim:tw=78:ts=8:noet:ft=help:norl:
