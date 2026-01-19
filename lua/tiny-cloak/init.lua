@@ -360,6 +360,40 @@ function M.preview_line()
     end,
     once = true,
   })
+
+  -- Set up buffer cleanup autocmds to clear preview when leaving buffer
+  vim.api.nvim_create_autocmd({ 'BufLeave', 'BufWinLeave' }, {
+    buffer = bufnr,
+    callback = function()
+      clear_preview()
+    end,
+    once = true,
+  })
+end
+
+function M.preview_toggle()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local cursor_pos = vim.api.nvim_win_get_cursor(0)
+  local line_num = cursor_pos[1] - 1
+
+  -- Get extmarks on current line
+  local line_extmarks = get_line_extmarks(bufnr, line_num)
+
+  -- If no cloaked content on this line, clear any existing preview and do nothing
+  if #line_extmarks == 0 then
+    clear_preview()
+    return
+  end
+
+  -- If preview already active on this line, re-cloak it
+  if preview_active_bufnr == bufnr and preview_line_num == line_num then
+    clear_preview()
+    return
+  end
+
+  -- Otherwise, clear previous preview (if any) and reveal this line
+  clear_preview()
+  M.preview_line()
 end
 
 function M.setup(opts)
@@ -399,6 +433,7 @@ function M.setup(opts)
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
   vim.api.nvim_create_user_command('CloakPreviewLine', M.preview_line, {})
+  vim.api.nvim_create_user_command('CloakPreviewToggle', M.preview_toggle, {})
 end
 
 return M
