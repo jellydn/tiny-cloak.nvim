@@ -260,7 +260,13 @@ describe('tiny-cloak', function()
       local bufnr = vim.api.nvim_create_buf(false, true)
       vim.api.nvim_buf_set_name(bufnr, '/tmp/.env')
       vim.bo[bufnr].filetype = 'env'
-      vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'DATABASE_URL=postgres://user:password@localhost' })
+      vim.api.nvim_buf_set_lines(
+        bufnr,
+        0,
+        -1,
+        false,
+        { 'DATABASE_URL=postgres://user:password@localhost' }
+      )
 
       M.cloak_buffer(bufnr)
 
