@@ -1,3 +1,16 @@
 # Ralph Progress Log
 Started: Tue Jan 20 06:57:00 +08 2026
 ---
+
+## Tue Jan 20 07:03:00 +08 2026 - US-001
+[Session: https://opncd.ai/s/]
+- Implemented CloakPreviewLine command and M.preview_line() function
+- Added preview state tracking with clear_preview() and get_line_extmarks() helper functions
+- Modified cloak_line() to return extmark ID for tracking
+- Added command registration in setup()
+- Files changed: lua/tiny-cloak/init.lua
+- **Learnings for future iterations:**
+  - Pattern: Use extmark IDs and namespace management for text overlay operations
+  - Gotchas: Must clear and restore extmarks carefully to avoid orphaned overlays
+  - Context: Preview functionality needs state management across buffer changes
+---
