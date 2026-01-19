@@ -34,5 +34,5 @@ test_dependencies = {
 }
 test = {
   type = "command",
-  test = { "nvim", "--headless", "-c", "luafile test/runner.lua" },
+  test = "test.lua",
 }

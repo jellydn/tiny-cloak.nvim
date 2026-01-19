@@ -27,8 +27,11 @@ make help        # Show this help
 # Run all tests (uses Neovim headless)
 nvim --headless -c "luafile test/runner.lua" -c "qall!"
 
+# Run tests via LuaRocks test command
+luarocks test tiny-cloak.nvim-1.0.0-1.rockspec
+
 # Tests use a custom runner at test/runner.lua
-# It creates real Neovim buffers and verifies extmarks
+# LuaRocks uses test.lua as the test script entry point
 ```
 
 ### Code Formatting
