@@ -57,6 +57,70 @@ local function cloak_json_value(line, bufnr, line_num)
   end
 end
 
+local function cloak_yaml_value(line, bufnr, line_num)
+  -- YAML key patterns to cloak (case-insensitive)
+  local yaml_key_patterns = {
+    'api_key',
+    'apiKey',
+    'secret',
+    'password',
+    'token',
+    'credential',
+    'auth',
+  }
+
+  for _, pattern in ipairs(yaml_key_patterns) do
+    -- Match YAML patterns: api_key: value or apiKey: value
+    -- Handle both api_key and apiKey variants
+    local quoted_pattern = pattern:gsub('_', '[_%-]?')
+    local yaml_pattern = '^%s*' .. quoted_pattern .. '%s*:%s*[^%s]+'
+
+    local start_pos, end_pos = string.find(line, yaml_pattern)
+    if start_pos then
+      -- Find the colon position
+      local colon_pos = string.find(line, ':', start_pos)
+      if colon_pos then
+        -- Find the value start (skip whitespace after colon)
+        local value_start = colon_pos + 1
+        while value_start <= #line and string.sub(line, value_start, value_start):match('%s') do
+          value_start = value_start + 1
+        end
+
+        -- Check if the value is quoted (string) or unquoted
+        if value_start <= #line then
+          local first_char = string.sub(line, value_start, value_start)
+          local value_end = #line + 1
+
+          if first_char == '"' or first_char == "'" then
+            -- Handle quoted strings
+            local quote_char = first_char
+            local end_quote = string.find(line, quote_char, value_start + 1, true)
+            if end_quote then
+              value_end = end_quote
+            end
+          else
+            -- Handle unquoted values (stop at whitespace or comment)
+            local whitespace_pos = string.find(line, '%s', value_start)
+            local comment_pos = string.find(line, '#', value_start)
+
+            if whitespace_pos and comment_pos then
+              value_end = math.min(whitespace_pos, comment_pos)
+            elseif whitespace_pos then
+              value_end = whitespace_pos
+            elseif comment_pos then
+              value_end = comment_pos
+            end
+          end
+
+          if value_end > value_start then
+            M.cloak_line(bufnr, line_num, value_start - 1, value_end - 1)
+          end
+        end
+      end
+    end
+  end
+end
+
 local function cloak_env_value(line, bufnr, line_num)
   local key_patterns = M.config.key_patterns
   local key_end = nil
@@ -115,6 +179,15 @@ function M.cloak_buffer(bufnr)
       local trimmed = line:gsub('\r$', ''):gsub('\n$', '')
       if trimmed ~= '' then
         cloak_json_value(trimmed, bufnr, i - 1)
+      end
+    end
+  elseif filetype == 'yaml' or filetype == 'yml' or filename:match('%.ya?ml$') then
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
+    for i, line in ipairs(lines) do
+      local trimmed = line:gsub('\r$', ''):gsub('\n$', '')
+      if trimmed ~= '' and trimmed:sub(1, 1) ~= '#' then
+        cloak_yaml_value(trimmed, bufnr, i - 1)
       end
     end
   end
