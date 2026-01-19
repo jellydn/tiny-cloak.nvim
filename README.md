@@ -6,6 +6,8 @@
 
 A lightweight Neovim plugin that masks sensitive data (API keys, secrets, tokens) in `.env`, JSON, and YAML files. Prevents accidental exposure of credentials during screen sharing, demos, or pair programming.
 
+[![Demo](https://i.gyazo.com/0e0f1c253ad07f932b8f48deda54a7f0.gif)](https://gyazo.com/0e0f1c253ad07f932b8f48deda54a7f0)
+
 ## ✨ Features
 
 - 🔒 Automatically cloak sensitive values in `.env`, `.json`, `.yaml`, and `.yml` files
