@@ -9,6 +9,29 @@ local default_config = {
 local namespace = vim.api.nvim_create_namespace('tiny-cloak')
 local enabled = true
 
+-- Shared patterns for JSON/YAML sensitive keys
+local SENSITIVE_KEY_PATTERNS = {
+  'api_key',
+  'apiKey',
+  'secret',
+  'password',
+  'token',
+  'credential',
+  'auth',
+}
+
+local function trim_line(line)
+  return line:gsub('[\r\n]$', '')
+end
+
+local function iter_loaded_buffers(fn)
+  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(bufnr) then
+      fn(bufnr)
+    end
+  end
+end
+
 local function matches_pattern(filename, patterns)
   for _, pattern in ipairs(patterns) do
     local regex_pattern = pattern:gsub('%.', '\\.'):gsub('%*', '.*')
@@ -20,32 +43,17 @@ local function matches_pattern(filename, patterns)
 end
 
 local function cloak_json_value(line, bufnr, line_num)
-  -- JSON key patterns to cloak (case-insensitive)
-  local json_key_patterns = {
-    'api_key',
-    'apiKey',
-    'secret',
-    'password',
-    'token',
-    'credential',
-    'auth',
-  }
-
-  for _, pattern in ipairs(json_key_patterns) do
-    -- Match: "apiKey": "value" or 'apiKey': 'value'
-    local quoted_pattern = pattern:gsub('_', '[_%-]?') -- Handle api_key and apiKey
+  for _, pattern in ipairs(SENSITIVE_KEY_PATTERNS) do
+    local quoted_pattern = pattern:gsub('_', '[_%-]?')
     local json_pattern = '["\']%s*' .. quoted_pattern .. '%s*["\']%s*:%s*["\'][^"\']*["\']'
 
-    local start_pos, end_pos = string.find(line, json_pattern)
+    local start_pos = string.find(line, json_pattern)
     if start_pos then
-      -- Find the colon position
       local colon_pos = string.find(line, ':', start_pos)
       if colon_pos then
-        -- Find the first quote after colon
         local first_quote = string.find(line, '["\']', colon_pos + 1)
         if first_quote then
           local value_start = first_quote + 1
-          -- Find the matching end quote
           local quote_char = string.sub(line, first_quote, first_quote)
           local end_quote = string.find(line, quote_char, value_start, true)
           if end_quote then
@@ -58,48 +66,30 @@ local function cloak_json_value(line, bufnr, line_num)
 end
 
 local function cloak_yaml_value(line, bufnr, line_num)
-  -- YAML key patterns to cloak (case-insensitive)
-  local yaml_key_patterns = {
-    'api_key',
-    'apiKey',
-    'secret',
-    'password',
-    'token',
-    'credential',
-    'auth',
-  }
-
-  for _, pattern in ipairs(yaml_key_patterns) do
-    -- Match YAML patterns: api_key: value or apiKey: value
-    -- Handle both api_key and apiKey variants
+  for _, pattern in ipairs(SENSITIVE_KEY_PATTERNS) do
     local quoted_pattern = pattern:gsub('_', '[_%-]?')
     local yaml_pattern = '^%s*' .. quoted_pattern .. '%s*:%s*[^%s]+'
 
-    local start_pos, end_pos = string.find(line, yaml_pattern)
+    local start_pos = string.find(line, yaml_pattern)
     if start_pos then
-      -- Find the colon position
       local colon_pos = string.find(line, ':', start_pos)
       if colon_pos then
-        -- Find the value start (skip whitespace after colon)
         local value_start = colon_pos + 1
         while value_start <= #line and string.sub(line, value_start, value_start):match('%s') do
           value_start = value_start + 1
         end
 
-        -- Check if the value is quoted (string) or unquoted
         if value_start <= #line then
           local first_char = string.sub(line, value_start, value_start)
           local value_end = #line + 1
 
           if first_char == '"' or first_char == "'" then
-            -- Handle quoted strings
             local quote_char = first_char
             local end_quote = string.find(line, quote_char, value_start + 1, true)
             if end_quote then
               value_end = end_quote
             end
           else
-            -- Handle unquoted values (stop at whitespace or comment)
             local whitespace_pos = string.find(line, '%s', value_start)
             local comment_pos = string.find(line, '#', value_start)
 
@@ -122,13 +112,10 @@ local function cloak_yaml_value(line, bufnr, line_num)
 end
 
 local function cloak_connection_string(line, bufnr, line_num)
-  -- Match user:pass@ pattern in connection strings like postgres://user:pass@host
-  -- Pattern: protocol://user:password@
   local pattern = '://([^:]+):([^@]+)@'
-  local full_start, full_end, user, pass = string.find(line, pattern)
+  local full_start, _, _, pass = string.find(line, pattern)
 
   if full_start and pass then
-    -- Find the position of the password (after user:)
     local protocol_end = string.find(line, '://')
     if protocol_end then
       local user_start = protocol_end + 3
@@ -166,7 +153,6 @@ local function cloak_env_value(line, bufnr, line_num)
       end
     end
   else
-    -- Check for connection string patterns (user:pass@) regardless of key name
     cloak_connection_string(line, bufnr, line_num)
   end
 end
@@ -180,38 +166,32 @@ function M.cloak_buffer(bufnr)
   local filepath = vim.api.nvim_buf_get_name(bufnr)
   local filename = vim.fs.basename(filepath)
 
-  local config = M.config
-
-  if not matches_pattern(filename, config.file_patterns) then
+  if not matches_pattern(filename, M.config.file_patterns) then
     return
   end
 
   local filetype = vim.api.nvim_buf_get_option(bufnr, 'filetype')
   vim.api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
 
-  if filetype == 'env' or filename:match('%.env$') then
-    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
+  if filetype == 'env' or filename:match('%.env$') then
     for i, line in ipairs(lines) do
-      local trimmed = line:gsub('\r$', ''):gsub('\n$', '')
+      local trimmed = trim_line(line)
       if trimmed ~= '' and trimmed:sub(1, 1) ~= '#' then
         cloak_env_value(trimmed, bufnr, i - 1)
       end
     end
   elseif filetype == 'json' or filename:match('%.json$') then
-    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-
     for i, line in ipairs(lines) do
-      local trimmed = line:gsub('\r$', ''):gsub('\n$', '')
+      local trimmed = trim_line(line)
       if trimmed ~= '' then
         cloak_json_value(trimmed, bufnr, i - 1)
       end
     end
   elseif filetype == 'yaml' or filetype == 'yml' or filename:match('%.ya?ml$') then
-    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-
     for i, line in ipairs(lines) do
-      local trimmed = line:gsub('\r$', ''):gsub('\n$', '')
+      local trimmed = trim_line(line)
       if trimmed ~= '' and trimmed:sub(1, 1) ~= '#' then
         cloak_yaml_value(trimmed, bufnr, i - 1)
       end
@@ -221,18 +201,14 @@ end
 
 function M.toggle()
   enabled = not enabled
-  if not enabled then
-    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-      if vim.api.nvim_buf_is_loaded(bufnr) then
-        vim.api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
-      end
-    end
+  if enabled then
+    iter_loaded_buffers(function(bufnr)
+      M.cloak_buffer(bufnr)
+    end)
   else
-    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-      if vim.api.nvim_buf_is_loaded(bufnr) then
-        M.cloak_buffer(bufnr)
-      end
-    end
+    iter_loaded_buffers(function(bufnr)
+      vim.api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
+    end)
   end
 end
 
