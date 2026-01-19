@@ -1,0 +1,116 @@
+-- Simple test runner for tiny-cloak.nvim
+-- Usage: nvim --headless -c "luafile test/runner.lua"
+
+package.path = 'lua/?.lua;lua/?/init.lua;test/?.lua;' .. package.path
+
+local M = require('tiny-cloak')
+
+local passed = 0
+local failed = 0
+local errors = {}
+
+local function assert(condition, message)
+  if not condition then
+    error(message or 'Assertion failed')
+  end
+end
+
+local function test(name, fn)
+  local status, err = pcall(fn)
+  if status then
+    passed = passed + 1
+    print('  [PASS] ' .. name)
+  else
+    failed = failed + 1
+    table.insert(errors, { name = name, error = err })
+    print('  [FAIL] ' .. name .. ': ' .. tostring(err))
+  end
+end
+
+local function describe(name, fn)
+  print('\n' .. name)
+  fn()
+end
+
+local test_ns = vim.api.nvim_create_namespace('tiny-cloak')
+
+local function create_test_buffer(name, lines, filetype)
+  local bufnr = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_name(bufnr, name)
+  if filetype then
+    vim.api.nvim_buf_set_option(bufnr, 'filetype', filetype)
+  end
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+  return bufnr
+end
+
+local function delete_buffer(bufnr)
+  vim.api.nvim_buf_delete(bufnr, { force = true })
+end
+
+print('Running tiny-cloak.nvim tests...\n')
+
+describe('setup', function()
+  test('should load with default config', function()
+    M.setup({})
+    assert(M.config ~= nil, 'config should not be nil')
+    assert(M.config.file_patterns ~= nil, 'file_patterns should not be nil')
+  end)
+
+  test('should have default file patterns', function()
+    assert(#M.config.file_patterns > 0, 'should have patterns')
+  end)
+end)
+
+describe('cloak_buffer', function()
+  test('should not cloak non-matching file patterns', function()
+    local bufnr = create_test_buffer('/tmp/test.txt', { 'API_KEY=secret' })
+    M.cloak_buffer(bufnr)
+    local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
+    assert(#extmarks == 0, 'should not have extmarks for non-matching file')
+    delete_buffer(bufnr)
+  end)
+
+  test('should cloak env files', function()
+    local bufnr = create_test_buffer('/tmp/.env', { 'API_KEY=secret123' }, 'env')
+    M.cloak_buffer(bufnr)
+    local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
+    assert(#extmarks == 1, 'should have 1 extmark for env file')
+    delete_buffer(bufnr)
+  end)
+
+  test('should cloak json files', function()
+    local bufnr = create_test_buffer('/tmp/config.json', { '{"apiKey": "secret123"}' }, 'json')
+    M.cloak_buffer(bufnr)
+    local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
+    assert(#extmarks == 1, 'should have 1 extmark for json file')
+    delete_buffer(bufnr)
+  end)
+
+  test('should cloak yaml files', function()
+    local bufnr = create_test_buffer('/tmp/config.yaml', { 'api_key: secret123' }, 'yaml')
+    M.cloak_buffer(bufnr)
+    local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
+    assert(#extmarks == 1, 'should have 1 extmark for yaml file')
+    delete_buffer(bufnr)
+  end)
+end)
+
+describe('toggle', function()
+  test('should be a function', function()
+    assert(type(M.toggle) == 'function', 'toggle should be a function')
+  end)
+end)
+
+print('\n' .. string.rep('=', 50))
+print(string.format('Results: %d passed, %d failed', passed, failed))
+
+if #errors > 0 then
+  print('\nFailed tests:')
+  for _, e in ipairs(errors) do
+    print('  - ' .. e.name .. ': ' .. tostring(e.error))
+  end
+  os.exit(1)
+else
+  os.exit(0)
+end

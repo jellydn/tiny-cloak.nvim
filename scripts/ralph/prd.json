@@ -1,0 +1,153 @@
+{
+  "project": "tiny-cloak.nvim",
+  "branchName": "ralph/tiny-cloak",
+  "description": "A lightweight Neovim plugin that masks sensitive data (API keys, secrets, tokens) in .env, JSON, and YAML files",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Setup plugin structure",
+      "description": "As a developer, I need the basic plugin structure so the plugin can be loaded by Neovim package managers.",
+      "acceptanceCriteria": [
+        "lua/tiny-cloak/init.lua exports a setup() function",
+        "Default configuration is applied when setup() is called without arguments",
+        "Plugin loads without errors: :lua require('tiny-cloak').setup()",
+        "Typecheck passes (selene or lua-language-server)"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Implement core cloaking engine with extmarks",
+      "description": "As a developer, I need the core cloaking mechanism using Neovim's extmarks API.",
+      "acceptanceCriteria": [
+        "Create namespace via vim.api.nvim_create_namespace('tiny-cloak')",
+        "Implement cloak_line(bufnr, line_num, start_col, end_col) function",
+        "Use nvim_buf_set_extmark with virt_text and virt_text_pos='overlay'",
+        "Cloak character repeats to match original text length",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Cloak .env files",
+      "description": "As a user, I want API keys in .env files automatically masked so I don't accidentally expose them.",
+      "acceptanceCriteria": [
+        "Values matching patterns are cloaked: API_KEY, SECRET, PASSWORD, TOKEN, CREDENTIAL, AUTH",
+        "Only the value portion is cloaked (key name remains visible)",
+        "Example: API_KEY=sk-abc123 displays as API_KEY=**********",
+        "Cloaking applies automatically when opening .env files",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Cloak JSON files",
+      "description": "As a user, I want secrets in JSON files masked so config files are safe to display.",
+      "acceptanceCriteria": [
+        "String values for keys matching common patterns are cloaked (case-insensitive)",
+        "Patterns: api_key, apiKey, secret, password, token, credential, auth",
+        "Example: \"apiKey\": \"sk-abc123\" displays as \"apiKey\": \"**********\"",
+        "Cloaking applies automatically when opening .json files",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Successfully implemented with cloak_json_value function. Handles both api_key and apiKey patterns, supports single and double quotes."
+    },
+    {
+      "id": "US-005",
+      "title": "Cloak YAML files",
+      "description": "As a user, I want secrets in YAML files masked so config files are safe to display.",
+      "acceptanceCriteria": [
+        "String values for keys matching common patterns are cloaked (case-insensitive)",
+        "Patterns: api_key, apiKey, secret, password, token, credential, auth",
+        "Example: api_key: sk-abc123 displays as api_key: **********",
+        "Cloaking applies automatically when opening .yaml and .yml files",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Successfully implemented with cloak_yaml_value function. Handles both api_key and apiKey patterns, supports quoted and unquoted values, properly handles comments and whitespace."
+    },
+    {
+      "id": "US-006",
+      "title": "Auto-attach to buffers via autocommands",
+      "description": "As a user, I want cloaking to apply automatically when I open matching files.",
+      "acceptanceCriteria": [
+        "Create autocommand group 'TinyCloak'",
+        "Attach on BufEnter and BufRead for patterns: .env*, *.json, *.yaml, *.yml",
+        "Re-apply cloaking on TextChanged and TextChangedI events",
+        "Clear extmarks before re-applying to avoid duplicates",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Successfully implemented autocommands for BufEnter, BufRead, BufWinEnter, TextChanged, TextChangedI events. Verified extmarks are created correctly for .env and JSON files. TextChanged properly re-applies cloaking when new secrets are added."
+    },
+    {
+      "id": "US-007",
+      "title": "Implement CloakToggle command",
+      "description": "As a user, I want to toggle cloaking on/off so I can temporarily view actual values.",
+      "acceptanceCriteria": [
+        ":CloakToggle command toggles cloaking state globally",
+        "When disabled, all extmarks are cleared from all buffers",
+        "When re-enabled, cloaking is re-applied to all matching buffers",
+        "State persists until toggled again or Neovim restarts",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Successfully implemented CloakToggle command. Toggles global enabled state, clears/re-applies extmarks across all buffers, persists until toggled again or Neovim restarts."
+    },
+    {
+      "id": "US-008",
+      "title": "Implement CloakEnable and CloakDisable commands",
+      "description": "As a user, I want explicit enable/disable commands for scripting and keymaps.",
+      "acceptanceCriteria": [
+        ":CloakEnable enables cloaking (no-op if already enabled)",
+        ":CloakDisable disables cloaking (no-op if already disabled)",
+        "Commands work from any buffer",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Successfully implemented CloakEnable and CloakDisable commands. Both commands work from any buffer, no-op if already in target state."
+    },
+    {
+      "id": "US-009",
+      "title": "Configurable cloak character",
+      "description": "As a user, I want to customize the masking character to match my preferences.",
+      "acceptanceCriteria": [
+        "setup({ cloak_character = '•' }) uses '•' instead of '*'",
+        "Default cloak character is '*'",
+        "Character is used in all extmark overlays",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Successfully implemented configurable cloak character. setup({ cloak_character = '•' }) uses custom character. Verified extmarks show custom ••••••••••••••• characters instead of default *****."
+    },
+    {
+      "id": "US-010",
+      "title": "Configurable file patterns",
+      "description": "As a user, I want to add custom file patterns to cloak additional file types.",
+      "acceptanceCriteria": [
+        "setup({ file_patterns = { '.env*', '*.json', '*.yaml', '*.yml' } }) configures patterns",
+        "Patterns use Neovim autocommand glob syntax",
+        "Default patterns cover .env, .env.*, *.json, *.yaml, *.yml",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Successfully implemented configurable file patterns. setup({ file_patterns = {'*.json'} }) correctly restricts cloaking to only JSON files (0 extmarks for .env, 1 extmark for JSON). Patterns use Neovim autocommand glob syntax."
+    }
+  ]
+}

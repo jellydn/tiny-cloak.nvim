@@ -1,0 +1,13 @@
+{
+  "apiKey": "sk-secret-key-12345",
+  "database_password": "super_secret_db_pass",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+  "secret": "my-app-secret-value",
+  "credential": "AKIAIOSFODNN7EXAMPLE",
+  "auth_key": "auth-token-123456789",
+  "public_setting": "this_is_visible",
+  "config": {
+    "password": "nested-secret",
+    "nested_apiKey": "nested-key-secret"
+  }
+}
