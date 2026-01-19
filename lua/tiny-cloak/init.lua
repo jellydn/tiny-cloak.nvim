@@ -307,11 +307,11 @@ local function get_line_extmarks(bufnr, line_num)
 
   local cloak_extmarks = {}
   for _, extmark in ipairs(extmarks) do
-    local _, _, start_col, end_col, details = unpack(extmark)
-    if details.virt_text and #details.virt_text > 0 then
+    local _, _, start_col, details = unpack(extmark)
+    if details and details.virt_text and #details.virt_text > 0 then
       table.insert(cloak_extmarks, {
         start_col = start_col,
-        end_col = end_col,
+        end_col = details.end_col,
         cloak_text = details.virt_text[1][1],
       })
     end
@@ -429,10 +429,26 @@ function M.setup(opts)
     end,
   })
 
+  vim.api.nvim_create_autocmd('InsertEnter', {
+    group = 'TinyCloak',
+    pattern = config.file_patterns,
+    callback = function(args)
+      if not enabled then
+        return
+      end
+      local bufnr = args.buf
+      local cursor_pos = vim.api.nvim_win_get_cursor(0)
+      local line_num = cursor_pos[1] - 1
+      local line_extmarks = get_line_extmarks(bufnr, line_num)
+      if #line_extmarks > 0 then
+        M.preview_line()
+      end
+    end,
+  })
+
   vim.api.nvim_create_user_command('CloakToggle', M.toggle, {})
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
-  vim.api.nvim_create_user_command('CloakPreviewLine', M.preview_line, {})
   vim.api.nvim_create_user_command('CloakPreviewToggle', M.preview_toggle, {})
 end
 
