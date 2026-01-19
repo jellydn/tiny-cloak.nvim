@@ -132,8 +132,8 @@
         "Typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Successfully implemented configurable cloak character. setup({ cloak_character = '•' }) uses custom character. Verified extmarks show custom ••••••••••••••• characters instead of default *****."
     },
     {
       "id": "US-010",
@@ -146,8 +146,8 @@
         "Typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Successfully implemented configurable file patterns. setup({ file_patterns = {'*.json'} }) correctly restricts cloaking to only JSON files (0 extmarks for .env, 1 extmark for JSON). Patterns use Neovim autocommand glob syntax."
     }
   ]
 }

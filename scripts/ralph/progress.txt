@@ -79,3 +79,19 @@ Started: Mon Jan 19 20:30:13 +08 2026
   - YAML patterns should handle both api_key and apiKey variants with [_%-]? pattern
   - Need to respect comment syntax (#) in YAML when determining value boundaries
   - vim.api.nvim_buf_get_option(bufnr, 'filetype') returns 'yaml' or 'yml' for YAML files
+
+## Mon Jan 19 23:00:00 +08 2026 - US-006 US-007 US-008
+- Implemented autocommands for automatic buffer attachment (US-006)
+- Created TinyCloak autocommand group with BufEnter, BufRead, BufWinEnter, TextChanged, TextChangedI events
+- Added CloakToggle, CloakEnable, CloakDisable user commands (US-007, US-008)
+- Fixed .env filename pattern matching bug - changed from ^%.env to %.env$ 
+- Verified autocommands work correctly for .env and JSON files
+- TextChanged autocommand properly re-applies cloaking when new secrets are added
+- Commands correctly toggle cloaking state globally across all buffers
+- Files changed: lua/tiny-cloak/init.lua, scripts/ralph/prd.json, scripts/ralph/progress.txt
+- **Learnings for future iterations:**
+  - .env* autocommand patterns only match files starting with .env, not ending with .env
+  - 'BufRead' autocommand is automatically converted to 'BufReadPost' by Neovim
+  - vim.api.nvim_buf_clear_namespace should be called before re-applying extmarks to avoid duplicates
+  - TextChanged autocommands trigger immediately after buffer modifications
+  - User commands should be created in setup() to ensure availability after plugin loading
