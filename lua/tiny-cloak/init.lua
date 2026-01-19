@@ -42,14 +42,29 @@ local function matches_pattern(filename, patterns)
   return false
 end
 
-local function cloak_json_value(line, bufnr, line_num)
+local function is_sensitive_key(key)
+  local lower_key = key:lower()
   for _, pattern in ipairs(SENSITIVE_KEY_PATTERNS) do
-    local quoted_pattern = pattern:gsub('_', '[_%-]?')
-    local json_pattern = '["\']%s*' .. quoted_pattern .. '%s*["\']%s*:%s*["\'][^"\']*["\']'
+    local lower_pattern = pattern:lower()
+    if lower_key:find(lower_pattern, 1, true) then
+      return true
+    end
+  end
+  return false
+end
 
-    local start_pos = string.find(line, json_pattern)
-    if start_pos then
-      local colon_pos = string.find(line, ':', start_pos)
+local function cloak_json_value(line, bufnr, line_num)
+  local key_pattern = '["\']([^"\']+)["\']%s*:%s*'
+  local search_start = 1
+
+  while true do
+    local key_start, key_end, key = string.find(line, key_pattern, search_start)
+    if not key_start then
+      break
+    end
+
+    if is_sensitive_key(key) then
+      local colon_pos = string.find(line, ':', key_start)
       if colon_pos then
         local first_quote = string.find(line, '["\']', colon_pos + 1)
         if first_quote then
@@ -62,52 +77,61 @@ local function cloak_json_value(line, bufnr, line_num)
         end
       end
     end
+
+    search_start = key_end + 1
   end
 end
 
 local function cloak_yaml_value(line, bufnr, line_num)
-  for _, pattern in ipairs(SENSITIVE_KEY_PATTERNS) do
-    local quoted_pattern = pattern:gsub('_', '[_%-]?')
-    local yaml_pattern = '^%s*' .. quoted_pattern .. '%s*:%s*[^%s]+'
+  local key_pattern = '^(%s*)([%w_%-]+)%s*:%s*(.*)$'
+  local indent, key, rest = string.match(line, key_pattern)
 
-    local start_pos = string.find(line, yaml_pattern)
-    if start_pos then
-      local colon_pos = string.find(line, ':', start_pos)
-      if colon_pos then
-        local value_start = colon_pos + 1
-        while value_start <= #line and string.sub(line, value_start, value_start):match('%s') do
-          value_start = value_start + 1
-        end
+  if not key or rest == '' then
+    return
+  end
 
-        if value_start <= #line then
-          local first_char = string.sub(line, value_start, value_start)
-          local value_end = #line + 1
+  if not is_sensitive_key(key) then
+    return
+  end
 
-          if first_char == '"' or first_char == "'" then
-            local quote_char = first_char
-            local end_quote = string.find(line, quote_char, value_start + 1, true)
-            if end_quote then
-              value_end = end_quote
-            end
-          else
-            local whitespace_pos = string.find(line, '%s', value_start)
-            local comment_pos = string.find(line, '#', value_start)
+  local colon_pos = string.find(line, ':', #indent + 1)
+  if not colon_pos then
+    return
+  end
 
-            if whitespace_pos and comment_pos then
-              value_end = math.min(whitespace_pos, comment_pos)
-            elseif whitespace_pos then
-              value_end = whitespace_pos
-            elseif comment_pos then
-              value_end = comment_pos
-            end
-          end
+  local value_start = colon_pos + 1
+  while value_start <= #line and string.sub(line, value_start, value_start):match('%s') do
+    value_start = value_start + 1
+  end
 
-          if value_end > value_start then
-            M.cloak_line(bufnr, line_num, value_start - 1, value_end - 1)
-          end
-        end
-      end
+  if value_start > #line then
+    return
+  end
+
+  local first_char = string.sub(line, value_start, value_start)
+  local value_end = #line + 1
+
+  if first_char == '"' or first_char == "'" then
+    local quote_char = first_char
+    local end_quote = string.find(line, quote_char, value_start + 1, true)
+    if end_quote then
+      value_end = end_quote
     end
+  else
+    local whitespace_pos = string.find(line, '%s', value_start)
+    local comment_pos = string.find(line, '#', value_start)
+
+    if whitespace_pos and comment_pos then
+      value_end = math.min(whitespace_pos, comment_pos)
+    elseif whitespace_pos then
+      value_end = whitespace_pos
+    elseif comment_pos then
+      value_end = comment_pos
+    end
+  end
+
+  if value_end > value_start then
+    M.cloak_line(bufnr, line_num, value_start - 1, value_end - 1)
   end
 end
 

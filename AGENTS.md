@@ -8,17 +8,27 @@ tiny-cloak.nvim is a lightweight Neovim plugin that masks sensitive data (API ke
 
 ## Build, Lint, and Test Commands
 
+### Makefile Commands
+
+```bash
+make test        # Run all tests
+make test-file   # Run test file
+make format      # Format Lua files
+make lint        # Check formatting
+make install     # Install with LuaRocks
+make dev-deps    # Install development dependencies
+make clean       # Clean build artifacts
+make help        # Show this help
+```
+
 ### Running Tests
 
 ```bash
-# Run all tests
-busted
+# Run all tests (uses Neovim headless)
+nvim --headless -c "luafile test/runner.lua" -c "qall!"
 
-# Run a single test file
-busted test/plugin_spec.lua
-
-# Run a specific test by name (uses busted tags or filter)
-busted --filter="should cloak env files"
+# Tests use a custom runner at test/runner.lua
+# It creates real Neovim buffers and verifies extmarks
 ```
 
 ### Code Formatting
@@ -40,9 +50,6 @@ luarocks install --deps-only tiny-cloak.nvim-1.0.0-1.rockspec
 
 # Install with test dependencies
 luarocks install tiny-cloak.nvim-1.0.0-1.rockspec
-
-# Run tests via LuaRocks
-luarocks test tiny-cloak.nvim-1.0.0-1.rockspec
 ```
 
 ## Code Style Guidelines
@@ -149,13 +156,13 @@ vim.api.nvim_create_autocmd({ 'BufEnter', 'BufRead' }, {
 })
 ```
 
-### Testing Patterns (busted)
+### Testing Patterns (custom runner)
 
 - Use `describe` blocks for grouping related tests
-- Use `before_each` to reset state between tests
-- Use `it` for individual test cases
-- Assertions: `assert.is_not_nil()`, `assert.are.equal()`, `assert.are.same()`
+- Use `test()` function for individual test cases
+- Assertions use `assert(condition, message)` function
 - Clean up test buffers with `vim.api.nvim_buf_delete(bufnr, { force = true })`
+- Tests run in Neovim headless mode with real buffers
 - Always create a fresh buffer for each test
 
 ### Documentation
