@@ -1,5 +1,14 @@
 # Ralph Progress Log
 Started: Tue Jan 20 06:57:00 +08 2026
+
+## Codebase Patterns
+- Use extmark IDs and namespace management for text overlay operations
+- Use buffer-local autocmds with cleanup tracking to prevent memory leaks
+- Must clear and restore extmarks carefully to avoid orphaned overlays
+- Always clean up autocmds when the state they manage is no longer valid
+- Preview functionality needs state management across buffer changes
+- InsertLeave autocmd fires for all exit methods (Escape, Ctrl-C, etc.)
+
 ---
 
 ## Tue Jan 20 07:03:00 +08 2026 - US-001
@@ -13,4 +22,45 @@ Started: Tue Jan 20 06:57:00 +08 2026
   - Pattern: Use extmark IDs and namespace management for text overlay operations
   - Gotchas: Must clear and restore extmarks carefully to avoid orphaned overlays
   - Context: Preview functionality needs state management across buffer changes
+---
+
+## Tue Jan 20 10:32:00 +08 2026 - US-002
+[Session: https://opncd.ai/s/]
+- Implemented auto-recloak on insert mode exit using buffer-local InsertLeave autocmd
+- Added preview_autocmd_id tracking for autocmd cleanup
+- Modified clear_preview() to clean up autocmd when re-cloaking
+- Added once=true to autocmd to prevent duplicate handlers
+- Files changed: lua/tiny-cloak/init.lua
+- **Learnings for future iterations:**
+  - Pattern: Use buffer-local autocmds with cleanup tracking to prevent memory leaks
+  - Gotchas: Always clean up autocmds when the state they manage is no longer valid
+  - Context: InsertLeave autocmd fires for all exit methods (Escape, Ctrl-C, etc.)
+---
+
+## Tue Jan 20 10:38:00 +08 2026 - US-003
+[Session: https://opncd.ai/s/]
+- Implemented CloakPreviewToggle command and M.preview_toggle() function
+- Added toggle logic that reveals/re-cloaks based on current preview state
+- Added BufLeave and BufWinLeave autocmds for buffer cleanup
+- Modified both preview_line() and preview_toggle() to set up cleanup autocmds
+- Added :CloakPreviewToggle user command registration
+- Files changed: lua/tiny-cloak/init.lua
+- **Learnings for future iterations:**
+  - Pattern: Toggle functions should check current state and call appropriate helper functions
+  - Context: Buffer cleanup autocmds should be set up for both direct preview and toggle actions
+  - Gotchas: Once=true on autocmds prevents duplicate handlers when switching lines
+---
+
+## Tue Jan 20 10:43:00 +08 2026 - US-004
+[Session: https://opncd.ai/s/]
+- Rewrote doc/tiny-cloak.nvim.txt with proper help documentation structure
+- Added comprehensive preview feature section with usage examples
+- Updated README.md with preview feature documentation and example keymaps
+- Added commands table with all preview commands
+- Provided example keymaps for preview functionality (no default keymaps shipped)
+- Files changed: README.md, doc/tiny-cloak.nvim.txt
+- **Learnings for future iterations:**
+  - Pattern: Help documentation should follow standard Neovim help tag conventions
+  - Context: README updates should include practical examples and keymap suggestions
+  - Gotchas: Replace template documentation completely rather than modifying existing content
 ---
