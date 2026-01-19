@@ -266,7 +266,9 @@ function M.setup(opts)
   local config = vim.tbl_deep_extend('force', default_config, opts)
   M.config = config
 
-  vim.api.nvim_create_augroup('TinyCloak', {})
+  enabled = true
+
+  vim.api.nvim_create_augroup('TinyCloak', { clear = true })
 
   vim.api.nvim_create_autocmd({ 'BufEnter', 'BufRead' }, {
     group = 'TinyCloak',
