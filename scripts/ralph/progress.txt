@@ -20,3 +20,17 @@ Started: Mon Jan 19 20:30:13 +08 2026
   - Use --headless mode for testing lua code without opening UI
   - selene not installed, but lua-language-server available for typechecking
 ---
+## Mon Jan 19 20:55:00 +08 2026 - US-002
+- Implemented core cloaking engine with extmarks
+- Added namespace via vim.api.nvim_create_namespace('tiny-cloak')
+- Implemented cloak_line(bufnr, line_num, start_col, end_col) function
+- Uses nvim_buf_set_extmark with virt_text and virt_text_pos='overlay'
+- Cloak character repeats to match original text length
+- Verified with headless nvim test: extmark created successfully
+- Files changed: lua/tiny-cloak/init.lua
+- **Learnings for future iterations:**
+  - extmark end_col is exclusive (end_col = start_col + length)
+  - nvim_buf_set_extmark validates end_col against line length
+  - virt_text with overlay position replaces text visually
+  - Use lua-language-server --check for type validation
+---
