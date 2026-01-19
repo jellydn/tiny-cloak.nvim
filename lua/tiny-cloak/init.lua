@@ -9,13 +9,11 @@ local default_config = {
 local namespace = vim.api.nvim_create_namespace('tiny-cloak')
 local enabled = true
 
--- Preview state tracking
 local preview_active_bufnr = nil
 local preview_line_num = nil
 local preview_extmarks = {}
 local preview_autocmd_id = nil
 
--- Shared patterns for JSON/YAML sensitive keys
 local SENSITIVE_KEY_PATTERNS = {
   'api_key',
   'apiKey',
@@ -268,32 +266,32 @@ function M.cloak_line(bufnr, line_num, start_col, end_col)
 end
 
 local function clear_preview()
-  if preview_active_bufnr and preview_line_num ~= nil and preview_extmarks then
-    -- Clean up preview autocmd if exists
-    if preview_autocmd_id then
-      vim.api.nvim_del_autocmd(preview_autocmd_id)
-      preview_autocmd_id = nil
-    end
-
-    -- Restore original extmarks
-    for _, extmark_info in ipairs(preview_extmarks) do
-      vim.api.nvim_buf_set_extmark(
-        preview_active_bufnr,
-        namespace,
-        preview_line_num,
-        extmark_info.start_col,
-        {
-          end_col = extmark_info.end_col,
-          virt_text = { { extmark_info.cloak_text, 'Comment' } },
-          virt_text_pos = 'overlay',
-        }
-      )
-    end
-
-    preview_active_bufnr = nil
-    preview_line_num = nil
-    preview_extmarks = {}
+  if not preview_active_bufnr then
+    return
   end
+
+  if preview_autocmd_id then
+    vim.api.nvim_del_autocmd(preview_autocmd_id)
+    preview_autocmd_id = nil
+  end
+
+  for _, extmark_info in ipairs(preview_extmarks) do
+    vim.api.nvim_buf_set_extmark(
+      preview_active_bufnr,
+      namespace,
+      preview_line_num,
+      extmark_info.start_col,
+      {
+        end_col = extmark_info.end_col,
+        virt_text = { { extmark_info.cloak_text, 'Comment' } },
+        virt_text_pos = 'overlay',
+      }
+    )
+  end
+
+  preview_active_bufnr = nil
+  preview_line_num = nil
+  preview_extmarks = {}
 end
 
 local function get_line_extmarks(bufnr, line_num)
@@ -325,48 +323,36 @@ function M.preview_line()
   local cursor_pos = vim.api.nvim_win_get_cursor(0)
   local line_num = cursor_pos[1] - 1
 
-  -- Get extmarks on current line
   local line_extmarks = get_line_extmarks(bufnr, line_num)
 
-  -- Return early if no cloaked content on this line
   if #line_extmarks == 0 then
     clear_preview()
     return
   end
 
-  -- Clear previous preview if active on different line
-  if preview_active_bufnr and (preview_active_bufnr ~= bufnr or preview_line_num ~= line_num) then
-    clear_preview()
-  end
-
-  -- If preview already active on this line, do nothing
   if preview_active_bufnr == bufnr and preview_line_num == line_num then
     return
   end
 
-  -- Store extmark info and clear them to reveal content
+  if preview_active_bufnr then
+    clear_preview()
+  end
+
   preview_active_bufnr = bufnr
   preview_line_num = line_num
   preview_extmarks = line_extmarks
 
-  -- Clear all cloak extmarks on this line
   vim.api.nvim_buf_clear_namespace(bufnr, namespace, line_num, line_num + 1)
 
-  -- Set up buffer-local InsertLeave autocmd to re-cloak when leaving insert mode
   preview_autocmd_id = vim.api.nvim_create_autocmd('InsertLeave', {
     buffer = bufnr,
-    callback = function()
-      clear_preview()
-    end,
+    callback = clear_preview,
     once = true,
   })
 
-  -- Set up buffer cleanup autocmds to clear preview when leaving buffer
   vim.api.nvim_create_autocmd({ 'BufLeave', 'BufWinLeave' }, {
     buffer = bufnr,
-    callback = function()
-      clear_preview()
-    end,
+    callback = clear_preview,
     once = true,
   })
 end
@@ -376,22 +362,18 @@ function M.preview_toggle()
   local cursor_pos = vim.api.nvim_win_get_cursor(0)
   local line_num = cursor_pos[1] - 1
 
-  -- Get extmarks on current line
   local line_extmarks = get_line_extmarks(bufnr, line_num)
 
-  -- If no cloaked content on this line, clear any existing preview and do nothing
   if #line_extmarks == 0 then
     clear_preview()
     return
   end
 
-  -- If preview already active on this line, re-cloak it
   if preview_active_bufnr == bufnr and preview_line_num == line_num then
     clear_preview()
     return
   end
 
-  -- Otherwise, clear previous preview (if any) and reveal this line
   clear_preview()
   M.preview_line()
 end
@@ -436,11 +418,9 @@ function M.setup(opts)
       if not enabled then
         return
       end
-      local bufnr = args.buf
       local cursor_pos = vim.api.nvim_win_get_cursor(0)
       local line_num = cursor_pos[1] - 1
-      local line_extmarks = get_line_extmarks(bufnr, line_num)
-      if #line_extmarks > 0 then
+      if #get_line_extmarks(args.buf, line_num) > 0 then
         M.preview_line()
       end
     end,
