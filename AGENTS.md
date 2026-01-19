@@ -50,6 +50,9 @@ luarocks install --deps-only tiny-cloak.nvim-1.0.0-1.rockspec
 
 # Install with test dependencies
 luarocks install tiny-cloak.nvim-1.0.0-1.rockspec
+
+# Run tests via LuaRocks (uses shell test type with nvim)
+luarocks test tiny-cloak.nvim-1.0.0-1.rockspec
 ```
 
 ## Code Style Guidelines
@@ -164,6 +167,8 @@ vim.api.nvim_create_autocmd({ 'BufEnter', 'BufRead' }, {
 - Clean up test buffers with `vim.api.nvim_buf_delete(bufnr, { force = true })`
 - Tests run in Neovim headless mode with real buffers
 - Always create a fresh buffer for each test
+- Tests use `os.exit()` for proper exit codes
+- The `.busted` file configures nlua as the Lua interpreter
 
 ### Documentation
 
