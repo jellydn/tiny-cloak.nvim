@@ -34,3 +34,15 @@ Started: Mon Jan 19 20:30:13 +08 2026
   - virt_text with overlay position replaces text visually
   - Use lua-language-server --check for type validation
 ---
+
+## Mon Jan 19 21:30:00 +08 2026 - US-003
+- Implemented .env file cloaking for US-003
+- Added pattern matching for API_KEY, SECRET, PASSWORD, TOKEN, CREDENTIAL, AUTH
+- Only the value portion is cloaked (key name remains visible)
+- Example: API_KEY=sk-abc123 displays as API_KEY=**********
+- Files changed: lua/tiny-cloak/init.lua
+- **Learnings for future iterations:**
+  - Lua patterns use ^ for start of string, not regex ^ anchor
+  - Lua string.find uses plain patterns, not full regex (no | alternation)
+  - extmark end_col is exclusive and refers to column position, not character index
+  - Use details=true in nvim_buf_get_extmarks to get extmark options
