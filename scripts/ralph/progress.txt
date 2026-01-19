@@ -95,3 +95,17 @@ Started: Mon Jan 19 20:30:13 +08 2026
   - vim.api.nvim_buf_clear_namespace should be called before re-applying extmarks to avoid duplicates
   - TextChanged autocommands trigger immediately after buffer modifications
   - User commands should be created in setup() to ensure availability after plugin loading
+
+## Mon Jan 19 23:15:00 +08 2026 - US-009 US-010
+- Verified US-009: configurable cloak character works correctly
+- Custom cloak_character '•' properly shows ••••••••••••••• in extmarks instead of ******
+- Verified US-010: configurable file patterns work correctly  
+- setup({ file_patterns = {'*.json'} }) restricts cloaking to only JSON files
+- .env files show 0 extmarks, JSON files show 1+ extmarks when patterns are filtered
+- Both features use vim.tbl_deep_extend for proper config merging with defaults
+- All acceptance criteria now complete for all user stories (US-001 through US-010)
+- Files changed: scripts/ralph/prd.json, scripts/ralph/progress.txt
+- **Learnings for future iterations:**
+  - Custom file patterns work by filtering which file types get autocommands attached
+  - Configurable options work through vim.tbl_deep_extend merging with defaults
+  - All user stories now complete - plugin fully functional with all requested features
