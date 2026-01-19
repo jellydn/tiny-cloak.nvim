@@ -1,16 +1,16 @@
 # Database Configuration
 database_host: localhost
-database_password: super_secret_db_pass
-api_key: sk-api-key-12345
-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
-secret: my-app-secret
-credential: AKIAIOSFODNN7EXAMPLE
-auth_key: auth-token-123456789
+database_password: example_db_password
+api_key: sk_example_key
+token: example.jwt.token
+secret: example_app_secret
+credential: AKIAEXAMPLE000000000
+auth_key: auth_token_example
 # This comment line is not cloaked
 public_setting: visible_value
 
 # Nested configuration
 services:
   api:
-    password: nested-secret
-    apiKey: nested-api-key
+    password: nested_secret_example
+    apiKey: nested_api_key_example
