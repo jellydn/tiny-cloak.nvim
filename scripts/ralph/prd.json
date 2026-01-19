@@ -59,8 +59,8 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Successfully implemented with cloak_json_value function. Handles both api_key and apiKey patterns, supports single and double quotes."
     },
     {
       "id": "US-005",
@@ -74,8 +74,8 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Successfully implemented with cloak_yaml_value function. Handles both api_key and apiKey patterns, supports quoted and unquoted values, properly handles comments and whitespace."
     },
     {
       "id": "US-006",
@@ -89,8 +89,8 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Successfully implemented autocommands for BufEnter, BufRead, BufWinEnter, TextChanged, TextChangedI events. Verified extmarks are created correctly for .env and JSON files. TextChanged properly re-applies cloaking when new secrets are added."
     },
     {
       "id": "US-007",
@@ -104,8 +104,8 @@
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Successfully implemented CloakToggle command. Toggles global enabled state, clears/re-applies extmarks across all buffers, persists until toggled again or Neovim restarts."
     },
     {
       "id": "US-008",
@@ -118,8 +118,8 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Successfully implemented CloakEnable and CloakDisable commands. Both commands work from any buffer, no-op if already in target state."
     },
     {
       "id": "US-009",

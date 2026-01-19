@@ -46,3 +46,36 @@ Started: Mon Jan 19 20:30:13 +08 2026
   - Lua string.find uses plain patterns, not full regex (no | alternation)
   - extmark end_col is exclusive and refers to column position, not character index
   - Use details=true in nvim_buf_get_extmarks to get extmark options
+---
+
+## Mon Jan 19 22:00:00 +08 2026 - US-004
+- Implemented JSON file cloaking functionality
+- Added cloak_json_value function to handle JSON key patterns
+- Supports case-insensitive matching of: api_key, apiKey, secret, password, token, credential, auth
+- Only cloaks string values, leaves key names visible  
+- Example: "apiKey": "sk-abc123" displays as "apiKey": "**********"
+- Tested with headless nvim and confirmed 4 extmarks created correctly for test JSON
+- Files changed: lua/tiny-cloak/init.lua, scripts/ralph/prd.json
+- **Learnings for future iterations:**
+  - Lua pattern matching for JSON requires careful handling of quote characters
+  - String.find with plain mode (third argument true) is essential for finding matching quotes
+  - JSON patterns should handle both api_key and apiKey variants with [_%-]? pattern
+  - vim.api.nvim_buf_get_option(bufnr, 'filetype') returns 'json' for .json files
+---
+
+## Mon Jan 19 22:15:00 +08 2026 - US-005
+- Implemented YAML file cloaking functionality for US-005
+- Added cloak_yaml_value function to handle YAML key patterns
+- Supports case-insensitive matching of: api_key, apiKey, secret, password, token, credential, auth
+- Only cloaks string values, leaves key names visible
+- Handles both quoted (single/double) and unquoted values
+- Example: api_key: sk-abc123 displays as api_key: **********
+- Tested with both .yaml and .yml file extensions
+- Verified correct handling of empty strings, comments, and whitespace
+- Files changed: lua/tiny-cloak/init.lua, scripts/ralph/prd.json
+- **Learnings for future iterations:**
+  - YAML parsing requires careful handling of quote characters vs unquoted values
+  - String.find with plain mode (third argument true) is essential for finding matching quotes
+  - YAML patterns should handle both api_key and apiKey variants with [_%-]? pattern
+  - Need to respect comment syntax (#) in YAML when determining value boundaries
+  - vim.api.nvim_buf_get_option(bufnr, 'filetype') returns 'yaml' or 'yml' for YAML files

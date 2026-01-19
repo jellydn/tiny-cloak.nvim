@@ -163,7 +163,7 @@ function M.cloak_buffer(bufnr)
   local filetype = vim.api.nvim_buf_get_option(bufnr, 'filetype')
   vim.api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
 
-  if filetype == 'env' or filename:match('^%.env') then
+  if filetype == 'env' or filename:match('%.env$') then
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
     for i, line in ipairs(lines) do
