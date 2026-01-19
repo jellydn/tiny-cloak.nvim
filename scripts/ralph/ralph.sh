@@ -14,6 +14,11 @@ SHARE=${4:-false}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPT_FILE="$SCRIPT_DIR/prompt-$CLI_TOOL.md"
 
+if [ ! -f "$PROMPT_FILE" ]; then
+	echo "Missing prompt file: $PROMPT_FILE" >&2
+	exit 1
+fi
+
 # Set opencode permissions via environment variable (equivalent to --dangerously-allow-all)
 if [ "$CLI_TOOL" = "opencode" ]; then
 	export OPENCODE_PERMISSION='{"*": "allow"}'

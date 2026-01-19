@@ -57,8 +57,8 @@ A lightweight Neovim plugin that masks sensitive data (API keys, secrets, tokens
 **Acceptance Criteria:**
 - [x] `:CloakToggle` command toggles cloaking state globally
 - [x] When disabled, all cloaked values become visible
-- [x] When re-enabled, values are cloaked again
-- [x] State persists until toggled again or Neovim restarts
+- [x] When re-enabled, values are cloaked
+- [x] State persists until toggled or Neovim restarts
 
 ### US-006: Implement CloakEnable and CloakDisable commands
 **Description:** As a user, I want explicit enable/disable commands for scripting and keymaps.
