@@ -13,6 +13,7 @@ local enabled = true
 local preview_active_bufnr = nil
 local preview_line_num = nil
 local preview_extmarks = {}
+local preview_autocmd_id = nil
 
 -- Shared patterns for JSON/YAML sensitive keys
 local SENSITIVE_KEY_PATTERNS = {
@@ -268,6 +269,12 @@ end
 
 local function clear_preview()
   if preview_active_bufnr and preview_line_num ~= nil and preview_extmarks then
+    -- Clean up preview autocmd if exists
+    if preview_autocmd_id then
+      vim.api.nvim_del_autocmd(preview_autocmd_id)
+      preview_autocmd_id = nil
+    end
+
     -- Restore original extmarks
     for _, extmark_info in ipairs(preview_extmarks) do
       vim.api.nvim_buf_set_extmark(
@@ -344,6 +351,15 @@ function M.preview_line()
 
   -- Clear all cloak extmarks on this line
   vim.api.nvim_buf_clear_namespace(bufnr, namespace, line_num, line_num + 1)
+
+  -- Set up buffer-local InsertLeave autocmd to re-cloak when leaving insert mode
+  preview_autocmd_id = vim.api.nvim_create_autocmd('InsertLeave', {
+    buffer = bufnr,
+    callback = function()
+      clear_preview()
+    end,
+    once = true,
+  })
 end
 
 function M.setup(opts)
