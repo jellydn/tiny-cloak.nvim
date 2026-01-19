@@ -34,5 +34,4 @@ test_dependencies = {
 }
 test = {
   type = "busted",
-  flags = { "--directory=test" },
 }
