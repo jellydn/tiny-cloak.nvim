@@ -19,6 +19,44 @@ local function matches_pattern(filename, patterns)
   return false
 end
 
+local function cloak_json_value(line, bufnr, line_num)
+  -- JSON key patterns to cloak (case-insensitive)
+  local json_key_patterns = {
+    'api_key',
+    'apiKey',
+    'secret',
+    'password',
+    'token',
+    'credential',
+    'auth',
+  }
+
+  for _, pattern in ipairs(json_key_patterns) do
+    -- Match: "apiKey": "value" or 'apiKey': 'value'
+    local quoted_pattern = pattern:gsub('_', '[_%-]?') -- Handle api_key and apiKey
+    local json_pattern = '["\']%s*' .. quoted_pattern .. '%s*["\']%s*:%s*["\'][^"\']*["\']'
+
+    local start_pos, end_pos = string.find(line, json_pattern)
+    if start_pos then
+      -- Find the colon position
+      local colon_pos = string.find(line, ':', start_pos)
+      if colon_pos then
+        -- Find the first quote after colon
+        local first_quote = string.find(line, '["\']', colon_pos + 1)
+        if first_quote then
+          local value_start = first_quote + 1
+          -- Find the matching end quote
+          local quote_char = string.sub(line, first_quote, first_quote)
+          local end_quote = string.find(line, quote_char, value_start, true)
+          if end_quote then
+            M.cloak_line(bufnr, line_num, value_start - 1, end_quote - 1)
+          end
+        end
+      end
+    end
+  end
+end
+
 local function cloak_env_value(line, bufnr, line_num)
   local key_patterns = M.config.key_patterns
   local key_end = nil
@@ -59,15 +97,24 @@ function M.cloak_buffer(bufnr)
   end
 
   local filetype = vim.api.nvim_buf_get_option(bufnr, 'filetype')
+  vim.api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
+
   if filetype == 'env' or filename:match('^%.env') then
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-
-    vim.api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
 
     for i, line in ipairs(lines) do
       local trimmed = line:gsub('\r$', ''):gsub('\n$', '')
       if trimmed ~= '' and trimmed:sub(1, 1) ~= '#' then
         cloak_env_value(trimmed, bufnr, i - 1)
+      end
+    end
+  elseif filetype == 'json' or filename:match('%.json$') then
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
+    for i, line in ipairs(lines) do
+      local trimmed = line:gsub('\r$', ''):gsub('\n$', '')
+      if trimmed ~= '' then
+        cloak_json_value(trimmed, bufnr, i - 1)
       end
     end
   end
