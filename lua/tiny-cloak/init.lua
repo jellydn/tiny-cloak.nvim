@@ -121,6 +121,29 @@ local function cloak_yaml_value(line, bufnr, line_num)
   end
 end
 
+local function cloak_connection_string(line, bufnr, line_num)
+  -- Match user:pass@ pattern in connection strings like postgres://user:pass@host
+  -- Pattern: protocol://user:password@
+  local pattern = '://([^:]+):([^@]+)@'
+  local full_start, full_end, user, pass = string.find(line, pattern)
+
+  if full_start and pass then
+    -- Find the position of the password (after user:)
+    local protocol_end = string.find(line, '://')
+    if protocol_end then
+      local user_start = protocol_end + 3
+      local colon_pos = string.find(line, ':', user_start)
+      if colon_pos then
+        local pass_start = colon_pos + 1
+        local at_pos = string.find(line, '@', pass_start)
+        if at_pos then
+          M.cloak_line(bufnr, line_num, pass_start - 1, at_pos - 1)
+        end
+      end
+    end
+  end
+end
+
 local function cloak_env_value(line, bufnr, line_num)
   local key_patterns = M.config.key_patterns
   local key_end = nil
@@ -142,6 +165,9 @@ local function cloak_env_value(line, bufnr, line_num)
         M.cloak_line(bufnr, line_num, value_start - 1, value_start - 1 + value_length)
       end
     end
+  else
+    -- Check for connection string patterns (user:pass@) regardless of key name
+    cloak_connection_string(line, bufnr, line_num)
   end
 end
 
