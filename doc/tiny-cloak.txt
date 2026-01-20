@@ -1,0 +1,188 @@
+*tiny-cloak.txt*          For NVIM v0.8.0         Last change: 2026 January 20
+
+==============================================================================
+Table of Contents                               *tiny-cloak-table-of-contents*
+
+1. tiny-cloak.nvim                                |tiny-cloak-tiny-cloak.nvim|
+  - ✨ Features                     |tiny-cloak-tiny-cloak.nvim-✨-features|
+  - ⚡️ Requirements       |tiny-cloak-tiny-cloak.nvim-⚡️-requirements|
+  - 📦 Installation           |tiny-cloak-tiny-cloak.nvim-📦-installation|
+  - 🚀 Usage                         |tiny-cloak-tiny-cloak.nvim-🚀-usage|
+  - ⌨️ Commands               |tiny-cloak-tiny-cloak.nvim-⌨️-commands|
+  - 👁️ Preview Feature|tiny-cloak-tiny-cloak.nvim-👁️-preview-feature|
+  - ⚙️ Configuration     |tiny-cloak-tiny-cloak.nvim-⚙️-configuration|
+  - 🔧 How It Works           |tiny-cloak-tiny-cloak.nvim-🔧-how-it-works|
+  - 👤 Author                       |tiny-cloak-tiny-cloak.nvim-👤-author|
+  - Show Your Support           |tiny-cloak-tiny-cloak.nvim-show-your-support|
+  - 📝 License                     |tiny-cloak-tiny-cloak.nvim-📝-license|
+2. Links                                                    |tiny-cloak-links|
+
+==============================================================================
+1. tiny-cloak.nvim                                *tiny-cloak-tiny-cloak.nvim*
+
+<https://github.com/jellydn/tiny-cloak.nvim/blob/main/LICENSE>
+<https://github.com/jellydn/tiny-cloak.nvim/stargazers>
+<https://github.com/jellydn/tiny-cloak.nvim/issues>
+
+A lightweight Neovim plugin that masks sensitive data (API keys, secrets,
+tokens) in `.env`, JSON, and YAML files. Prevents accidental exposure of
+credentials during screen sharing, demos, or pair programming.
+
+<https://gyazo.com/0e0f1c253ad07f932b8f48deda54a7f0>
+
+
+✨ FEATURES                         *tiny-cloak-tiny-cloak.nvim-✨-features*
+
+- 🔒 Automatically cloak sensitive values in `.env`, `.json`, `.yaml`, and `.yml` files
+- 🎯 Masks common patterns: `API_KEY`, `SECRET`, `PASSWORD`, `TOKEN`, `CREDENTIAL`, `AUTH`
+- ⚡ Zero configuration required for common use cases
+- 🪶 Minimal footprint with no external dependencies
+- 👁️ Toggle commands to temporarily reveal values
+
+
+⚡️ REQUIREMENTS           *tiny-cloak-tiny-cloak.nvim-⚡️-requirements*
+
+- Neovim >= **0.11.0**
+
+
+📦 INSTALLATION               *tiny-cloak-tiny-cloak.nvim-📦-installation*
+
+
+LAZY.NVIM ~
+
+>lua
+    {
+      "jellydn/tiny-cloak.nvim",
+      event = { "BufReadPre", "BufNewFile" },
+      opts = {},
+    }
+<
+
+
+PACKER.NVIM ~
+
+>lua
+    use {
+      "jellydn/tiny-cloak.nvim",
+      config = function()
+        require("tiny-cloak").setup()
+      end,
+    }
+<
+
+
+🚀 USAGE                             *tiny-cloak-tiny-cloak.nvim-🚀-usage*
+
+The plugin works automatically once installed. Open any `.env`, `.json`,
+`.yaml`, or `.yml` file and sensitive values will be masked:
+
+>env
+    # Before                          # After (displayed)
+    API_KEY=sk-example                API_KEY=***************
+    SECRET_TOKEN=example-secret       SECRET_TOKEN=************
+<
+
+
+⌨️ COMMANDS                   *tiny-cloak-tiny-cloak.nvim-⌨️-commands*
+
+  Command               Description
+  --------------------- ----------------------------------------------
+  :CloakToggle          Toggle cloaking on/off globally
+  :CloakEnable          Enable cloaking (no-op if already enabled)
+  :CloakDisable         Disable cloaking (no-op if already disabled)
+  :CloakPreviewToggle   Toggle preview on current line
+
+RECOMMENDED KEYMAPS ~
+
+>lua
+    -- Toggle cloaking globally
+    vim.keymap.set("n", "<leader>ct", "<cmd>CloakToggle<cr>", { desc = "Toggle cloak" })
+    
+    -- Preview current line (toggle reveal/cloak)
+    vim.keymap.set("n", "<leader>cp", "<cmd>CloakPreviewToggle<cr>", { desc = "Preview line" })
+<
+
+
+👁️ PREVIEW FEATURE   *tiny-cloak-tiny-cloak.nvim-👁️-preview-feature*
+
+The plugin automatically reveals cloaked values when you enter insert mode for
+seamless editing:
+
+- **Auto-reveal on Insert**: Enter insert mode on a cloaked line → value is revealed
+- **Auto-recloak on Exit**: Press `Escape` → value is automatically re-cloaked
+- **Manual Toggle**: `:CloakPreviewToggle` to reveal/hide in normal mode without editing
+
+
+EXAMPLE WORKFLOW ~
+
+1. Navigate to a line with cloaked content
+2. Press `i` to enter insert mode → value auto-reveals
+3. Edit the value
+4. Press `Escape` → value auto-recloaks
+
+
+⚙️ CONFIGURATION         *tiny-cloak-tiny-cloak.nvim-⚙️-configuration*
+
+>lua
+    require("tiny-cloak").setup({
+      -- Masking character
+      cloak_character = "*", -- default
+    
+      -- File patterns to cloak
+      file_patterns = { ".env*", "*.json", "*.yaml", "*.yml" }, -- default
+    
+      -- Key patterns to match for cloaking
+      key_patterns = { "API_KEY", "SECRET", "PASSWORD", "TOKEN", "CREDENTIAL", "AUTH" }, -- default
+    })
+<
+
+
+🔧 HOW IT WORKS               *tiny-cloak-tiny-cloak.nvim-🔧-how-it-works*
+
+Uses Neovim’s extmarks API to overlay text without modifying buffer content.
+Your files remain unchanged—only the visual display is masked.
+
+
+👤 AUTHOR                           *tiny-cloak-tiny-cloak.nvim-👤-author*
+
+**Huynh Duc Dung**
+
+- Website: https://productsway.com/
+- Twitter: @jellydn <https://twitter.com/jellydn>
+- GitHub: @jellydn <https://github.com/jellydn>
+
+
+SHOW YOUR SUPPORT               *tiny-cloak-tiny-cloak.nvim-show-your-support*
+
+If this plugin has been helpful, please give it a ⭐️.
+
+<https://ko-fi.com/dunghd> <https://paypal.me/dunghd>
+<https://www.buymeacoffee.com/dunghd>
+
+
+STAR HISTORY ~
+
+<https://star-history.com/#jellydn/tiny-cloak.nvim&Date>
+
+
+📝 LICENSE                         *tiny-cloak-tiny-cloak.nvim-📝-license*
+
+MIT
+
+==============================================================================
+2. Links                                                    *tiny-cloak-links*
+
+1. *License*: https://img.shields.io/github/license/jellydn/tiny-cloak.nvim?style=for-the-badge&logo=starship&color=ee999f&logoColor=D9E0EE&labelColor=302D41
+2. *Stars*: https://img.shields.io/github/stars/jellydn/tiny-cloak.nvim?style=for-the-badge&logo=starship&color=c69ff5&logoColor=D9E0EE&labelColor=302D41
+3. *Issues*: https://img.shields.io/github/issues/jellydn/tiny-cloak.nvim?style=for-the-badge&logo=bilibili&color=F5E0DC&logoColor=D9E0EE&labelColor=302D41
+4. *Demo*: https://i.gyazo.com/0e0f1c253ad07f932b8f48deda54a7f0.gif
+5. *@jellydn*: 
+6. *@jellydn*: 
+7. *Ko-fi*: https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white
+8. *PayPal*: https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white
+9. *Buy Me A Coffee*: https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black
+10. *Star History Chart*: https://api.star-history.com/svg?repos=jellydn/tiny-cloak.nvim&type=Date
+
+Generated by panvimdoc <https://github.com/kdheepak/panvimdoc>
+
+vim:tw=78:ts=8:noet:ft=help:norl:
