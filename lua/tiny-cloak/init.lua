@@ -277,19 +277,15 @@ local function clear_preview()
     return
   end
 
-  for _, extmark_info in ipairs(preview_extmarks) do
-    vim.api.nvim_buf_set_extmark(
-      preview_active_bufnr,
-      namespace,
-      preview_line_num,
-      extmark_info.start_col,
-      {
-        end_col = extmark_info.end_col,
-        virt_text = { { extmark_info.cloak_text, 'Comment' } },
-        virt_text_pos = 'overlay',
-      }
-    )
+  -- In insert mode, keep revealed
+  if vim.api.nvim_get_mode().mode:find('i') then
+    preview_active_bufnr = nil
+    preview_line_num = nil
+    preview_extmarks = {}
+    return
   end
+
+  M.cloak_buffer(preview_active_bufnr)
 
   preview_active_bufnr = nil
   preview_line_num = nil
@@ -397,11 +393,20 @@ function M.setup(opts)
     end,
   })
 
-  vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedI' }, {
+  -- Re-cloak on text changes in normal mode
+  vim.api.nvim_create_autocmd({ 'TextChanged' }, {
     group = 'TinyCloak',
     pattern = config.file_patterns,
     callback = function(args)
       M.cloak_buffer(args.buf)
+    end,
+  })
+
+  vim.api.nvim_create_autocmd({ 'TextChangedI' }, {
+    group = 'TinyCloak',
+    pattern = config.file_patterns,
+    callback = function(args)
+      -- Skip re-cloak in insert mode
     end,
   })
 
