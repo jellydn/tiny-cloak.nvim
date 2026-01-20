@@ -22,7 +22,7 @@ A lightweight Neovim plugin that masks sensitive data (API keys, secrets, tokens
 
 ## ⚡️ Requirements
 
-- Neovim >= **0.8.0**
+- Neovim >= **0.11.0**
 
 ## 📦 Installation
 
@@ -109,6 +109,26 @@ require("tiny-cloak").setup({
 ## 🔧 How It Works
 
 Uses Neovim's extmarks API to overlay text without modifying buffer content. Your files remain unchanged—only the visual display is masked.
+
+## 👤 Author
+
+**Huynh Duc Dung**
+
+- Website: https://productsway.com/
+- Twitter: [@jellydn](https://twitter.com/jellydn)
+- GitHub: [@jellydn](https://github.com/jellydn)
+
+## Show Your Support
+
+If this plugin has been helpful, please give it a ⭐️.
+
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/dunghd)
+[![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/dunghd)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/dunghd)
+
+### Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=jellydn/tiny-cloak.nvim&type=Date)](https://star-history.com/#jellydn/tiny-cloak.nvim&Date)
 
 ## 📝 License
 
