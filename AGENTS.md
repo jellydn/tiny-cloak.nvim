@@ -11,17 +11,9 @@ make dev-deps      # Install dev dependencies only
 make clean         # Clean build artifacts
 ```
 
-**Run single test:** Tests use a custom runner without individual test filtering. Run all tests to verify functionality:
+**Run tests:** `nvim --headless -c "luafile test/runner.lua" -c "qall!"` (no single-test filtering)
 
-```bash
-nvim --headless -c "luafile test/runner.lua" -c "qall!"
-```
-
-**Via LuaRocks:**
-
-```bash
-luarocks test tiny-cloak.nvim-1.0.0-1.rockspec
-```
+**Via LuaRocks:** `luarocks test tiny-cloak.nvim-1.0.0-1.rockspec`
 
 ## Code Style Guidelines
 
@@ -35,18 +27,6 @@ luarocks test tiny-cloak.nvim-1.0.0-1.rockspec
 | `test.lua`                   | LuaRocks test entry  |
 | `doc/tiny-cloak.nvim.txt`    | User documentation   |
 
-### Formatting (StyLua)
-
-```toml
-column_width = 100
-indent_type = "Spaces"
-indent_width = 2
-quote_style = "AutoPreferSingle"
-call_parentheses = "Always"
-```
-
-Run `stylua .` after changes.
-
 ### Naming Conventions
 
 | Type           | Convention       | Example                         |
@@ -57,6 +37,27 @@ Run `stylua .` after changes.
 | Autocmd groups | PascalCase       | `TinyCloak`                     |
 | Namespaces     | kebab-case       | `tiny-cloak`                    |
 | Commands       | CamelCase        | `CloakToggle`                   |
+
+### Module Pattern
+
+```lua
+local M = {}
+
+local default_config = {
+  file_patterns = { '.env*', '*.json', '*.yaml', '*.yml' },
+  cloak_character = '*',
+}
+
+local namespace = vim.api.nvim_create_namespace('tiny-cloak')
+local enabled = true
+
+local function helper() end
+
+function M.setup(opts) end
+function M.toggle() end
+
+return M
+```
 
 ### Imports & Dependencies
 
@@ -70,8 +71,8 @@ Run `stylua .` after changes.
 ```lua
 function M.cloak_buffer(bufnr)
   if not enabled then return end
-  if not bufnr then bufnr = vim.api.nvim_get_current_buf() end
-  -- ... rest of function
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  -- rest of function
 end
 
 function M.setup(opts)
@@ -98,62 +99,27 @@ vim.api.nvim_buf_delete(bufnr, { force = true })
 - Tests run in headless Neovim (`os.exit(0)` pass, `1` fail)
 - Create test buffers with `create_test_buffer({ name, filetype, lines })`
 
-### Module Pattern
+### Formatting (StyLua)
 
-```lua
-local M = {}
-
-local default_config = {
-  file_patterns = { '.env*', '*.json', '*.yaml', '*.yml' },
-  cloak_character = '*',
-}
-
-local namespace = vim.api.nvim_create_namespace('tiny-cloak')
-local enabled = true
-
-local function helper() end
-
-function M.setup(opts) end
-function M.toggle() end
-
-return M
+```toml
+column_width = 100
+indent_type = "Spaces"
+indent_width = 2
+quote_style = "AutoPreferSingle"
+call_parentheses = "Always"
 ```
 
-### General Principles
+Run `stylua .` after changes.
+
+## General Principles
 
 - Minimal footprint, zero external dependencies
 - Use Neovim native APIs (extmarks, autocmds, user commands)
 - Keep functions focused and single-purpose
 - Document public API in `doc/tiny-cloak.nvim.txt`
 
-### Additional Context
+## Release Workflow
 
-See `CLAUDE.md` for collaboration guidelines.
-
-## Configuration Options
-
-| Option            | Type   | Default                                    | Description                 |
-| ----------------- | ------ | ------------------------------------------ | --------------------------- |
-| `file_patterns`   | table  | `{ '.env*', '*.json', '*.yaml', '*.yml' }` | File patterns to cloak      |
-| `cloak_character` | string | `'*'`                                      | Character used for cloaking |
-| `key_patterns`    | table  | API_KEY, SECRET, PASSWORD...               | Key patterns to detect      |
-
-## Autocmd Patterns
-
-```lua
-vim.api.nvim_create_autocmd({ 'BufEnter', 'BufRead' }, {
-  group = 'TinyCloak',
-  pattern = config.file_patterns,
-  callback = function(args) M.cloak_buffer(args.buf) end,
-})
-```
-
-## Extmark Usage
-
-```lua
-vim.api.nvim_buf_set_extmark(bufnr, namespace, line_num, start_col, {
-  end_col = end_col,
-  virt_text = { { cloak_text, 'Comment' } },
-  virt_text_pos = 'overlay',
-})
-```
+- Tests run automatically before release (`.github/workflows/release.yml`)
+- LuaRocks releases are handled manually
+- GitHub releases created by `googleapis/release-please-action`
