@@ -26,7 +26,7 @@ jobs:
       - name: panvimdoc
         uses: kdheepak/panvimdoc@main
         with:
-          vimdoc: tiny-cloak.nvim.nvim
+          vimdoc: tiny-cloak
           treesitter: true
       - uses: stefanzweifel/git-auto-commit-action@v7
         with:
