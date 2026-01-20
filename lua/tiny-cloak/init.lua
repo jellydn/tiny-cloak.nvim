@@ -9,10 +9,10 @@ local default_config = {
 local namespace = vim.api.nvim_create_namespace('tiny-cloak')
 local enabled = true
 
+local preview_augroup = vim.api.nvim_create_augroup('TinyCloakPreview', { clear = true })
 local preview_active_bufnr = nil
 local preview_line_num = nil
 local preview_extmarks = {}
-local preview_autocmd_id = nil
 
 local SENSITIVE_KEY_PATTERNS = {
   'api_key',
@@ -270,9 +270,11 @@ local function clear_preview()
     return
   end
 
-  if preview_autocmd_id then
-    vim.api.nvim_del_autocmd(preview_autocmd_id)
-    preview_autocmd_id = nil
+  if not vim.api.nvim_buf_is_valid(preview_active_bufnr) then
+    preview_active_bufnr = nil
+    preview_line_num = nil
+    preview_extmarks = {}
+    return
   end
 
   for _, extmark_info in ipairs(preview_extmarks) do
@@ -305,7 +307,7 @@ local function get_line_extmarks(bufnr, line_num)
 
   local cloak_extmarks = {}
   for _, extmark in ipairs(extmarks) do
-    local _, _, start_col, details = unpack(extmark)
+    local _extmark_id, _row, start_col, details = unpack(extmark)
     if details and details.virt_text and #details.virt_text > 0 then
       table.insert(cloak_extmarks, {
         start_col = start_col,
@@ -334,9 +336,7 @@ function M.preview_line()
     return
   end
 
-  if preview_active_bufnr then
-    clear_preview()
-  end
+  clear_preview()
 
   preview_active_bufnr = bufnr
   preview_line_num = line_num
@@ -344,13 +344,15 @@ function M.preview_line()
 
   vim.api.nvim_buf_clear_namespace(bufnr, namespace, line_num, line_num + 1)
 
-  preview_autocmd_id = vim.api.nvim_create_autocmd('InsertLeave', {
+  vim.api.nvim_create_autocmd('InsertLeave', {
+    group = preview_augroup,
     buffer = bufnr,
     callback = clear_preview,
     once = true,
   })
 
   vim.api.nvim_create_autocmd({ 'BufLeave', 'BufWinLeave' }, {
+    group = preview_augroup,
     buffer = bufnr,
     callback = clear_preview,
     once = true,

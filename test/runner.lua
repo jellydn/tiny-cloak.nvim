@@ -5,6 +5,9 @@ package.path = 'lua/?.lua;lua/?/init.lua;test/?.lua;' .. package.path
 
 local M = require('tiny-cloak')
 
+-- Setup the module once for all tests
+M.setup({})
+
 local passed = 0
 local failed = 0
 local errors = {}
@@ -32,13 +35,69 @@ local function describe(name, fn)
   fn()
 end
 
+-- Test helper functions for buffer creation
+local function create_test_buffer(opts)
+  opts = opts or {}
+
+  -- Delete any existing buffer with the same name
+  if opts.name then
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.api.nvim_buf_is_valid(buf) then
+        local ok, name = pcall(vim.api.nvim_buf_get_name, buf)
+        if ok and name == opts.name then
+          vim.api.nvim_buf_delete(buf, { force = true })
+        end
+      end
+    end
+  end
+
+  local bufnr = vim.api.nvim_create_buf(false, true)
+
+  if opts.name then
+    vim.api.nvim_buf_set_name(bufnr, opts.name)
+  end
+
+  if opts.filetype then
+    vim.api.nvim_buf_set_option(bufnr, 'filetype', opts.filetype)
+  end
+
+  if opts.lines then
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, opts.lines)
+  end
+
+  return bufnr
+end
+
+local function create_env_buffer(lines)
+  return create_test_buffer({
+    name = '/tmp/.env',
+    filetype = 'env',
+    lines = lines,
+  })
+end
+
+local function create_json_buffer(lines)
+  return create_test_buffer({
+    name = '/tmp/config.json',
+    filetype = 'json',
+    lines = lines,
+  })
+end
+
+local function create_yaml_buffer(lines)
+  return create_test_buffer({
+    name = '/tmp/config.yaml',
+    filetype = 'yaml',
+    lines = lines,
+  })
+end
+
 local test_ns = vim.api.nvim_create_namespace('tiny-cloak')
 
 print('Running tiny-cloak.nvim tests...\n')
 
 describe('setup', function()
   test('should load with default config', function()
-    M.setup({})
     assert(M.config ~= nil, 'config should not be nil')
     assert(M.config.file_patterns ~= nil, 'file_patterns should not be nil')
   end)
@@ -50,9 +109,10 @@ end)
 
 describe('cloak_buffer', function()
   test('should not cloak non-matching file patterns', function()
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(bufnr, '/tmp/test.txt')
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'API_KEY=secret' })
+    local bufnr = create_test_buffer({
+      name = '/tmp/test.txt',
+      lines = { 'API_KEY=secret' },
+    })
     M.cloak_buffer(bufnr)
     local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
     assert(#extmarks == 0, 'should not have extmarks for non-matching file')
@@ -60,10 +120,7 @@ describe('cloak_buffer', function()
   end)
 
   test('should cloak env files', function()
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(bufnr, '/tmp/.env')
-    vim.api.nvim_buf_set_option(bufnr, 'filetype', 'env')
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'API_KEY=secret123' })
+    local bufnr = create_env_buffer({ 'API_KEY=secret123' })
     M.cloak_buffer(bufnr)
     local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
     assert(#extmarks == 1, 'should have 1 extmark for env file')
@@ -71,10 +128,7 @@ describe('cloak_buffer', function()
   end)
 
   test('should cloak json files', function()
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(bufnr, '/tmp/config.json')
-    vim.api.nvim_buf_set_option(bufnr, 'filetype', 'json')
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { '{"apiKey": "secret123"}' })
+    local bufnr = create_json_buffer({ '{"apiKey": "secret123"}' })
     M.cloak_buffer(bufnr)
     local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
     assert(#extmarks == 1, 'should have 1 extmark for json file')
@@ -82,10 +136,7 @@ describe('cloak_buffer', function()
   end)
 
   test('should cloak yaml files', function()
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(bufnr, '/tmp/config.yaml')
-    vim.api.nvim_buf_set_option(bufnr, 'filetype', 'yaml')
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'api_key: secret123' })
+    local bufnr = create_yaml_buffer({ 'api_key: secret123' })
     M.cloak_buffer(bufnr)
     local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
     assert(#extmarks == 1, 'should have 1 extmark for yaml file')
@@ -105,19 +156,17 @@ describe('preview_line', function()
   end)
 
   test('should return early if line has no cloak', function()
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(bufnr, '/tmp/test.txt')
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'no secrets here' })
+    local bufnr = create_test_buffer({
+      name = '/tmp/test.txt',
+      lines = { 'no secrets here' },
+    })
     vim.api.nvim_set_current_buf(bufnr)
     M.preview_line()
     vim.api.nvim_buf_delete(bufnr, { force = true })
   end)
 
   test('should reveal cloaked content on current line', function()
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(bufnr, '/tmp/.env')
-    vim.api.nvim_buf_set_option(bufnr, 'filetype', 'env')
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'API_KEY=secret123' })
+    local bufnr = create_env_buffer({ 'API_KEY=secret123' })
     vim.api.nvim_set_current_buf(bufnr)
     M.cloak_buffer(bufnr)
     local extmarks_before = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
@@ -135,10 +184,7 @@ describe('preview_toggle', function()
   end)
 
   test('should toggle reveal state on current line', function()
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(bufnr, '/tmp/.env')
-    vim.api.nvim_buf_set_option(bufnr, 'filetype', 'env')
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'API_KEY=secret123' })
+    local bufnr = create_env_buffer({ 'API_KEY=secret123' })
     vim.api.nvim_set_current_buf(bufnr)
     M.cloak_buffer(bufnr)
     local extmarks_initial = vim.api.nvim_buf_get_extmarks(bufnr, test_ns, 0, -1, {})
@@ -153,9 +199,10 @@ describe('preview_toggle', function()
   end)
 
   test('should return early if line has no cloak', function()
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(bufnr, '/tmp/test.txt')
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'no secrets here' })
+    local bufnr = create_test_buffer({
+      name = '/tmp/test.txt',
+      lines = { 'no secrets here' },
+    })
     vim.api.nvim_set_current_buf(bufnr)
     M.preview_toggle()
     vim.api.nvim_buf_delete(bufnr, { force = true })
