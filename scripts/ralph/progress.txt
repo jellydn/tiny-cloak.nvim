@@ -1,111 +1,66 @@
 # Ralph Progress Log
-Started: Mon Jan 19 20:30:13 +08 2026
----
+Started: Tue Jan 20 06:57:00 +08 2026
 
 ## Codebase Patterns
-- Plugin module structure: lua/tiny-cloak/init.lua for main module
-- Default config includes file_patterns and cloak_character fields
-- Use vim.tbl_deep_extend for merging user config with defaults
-- Runtimepath (rtp) must include project root for require() to work
+- Use extmark IDs and namespace management for text overlay operations
+- Use buffer-local autocmds with cleanup tracking to prevent memory leaks
+- Must clear and restore extmarks carefully to avoid orphaned overlays
+- Always clean up autocmds when the state they manage is no longer valid
+- Preview functionality needs state management across buffer changes
+- InsertLeave autocmd fires for all exit methods (Escape, Ctrl-C, etc.)
 
-## Mon Jan 19 20:38:00 +08 2026 - US-001
-- Implemented setup() function with default configuration
-- Created lua/tiny-cloak/init.lua with M.setup() and default_config
-- Verified plugin loads without errors with proper rtp configuration
-- Ran stylua for formatting and luac for syntax validation
+---
+
+## Tue Jan 20 07:03:00 +08 2026 - US-001
+[Session: https://opncd.ai/s/]
+- Implemented CloakPreviewLine command and M.preview_line() function
+- Added preview state tracking with clear_preview() and get_line_extmarks() helper functions
+- Modified cloak_line() to return extmark ID for tracking
+- Added command registration in setup()
 - Files changed: lua/tiny-cloak/init.lua
 - **Learnings for future iterations:**
-  - Neovim requires rtp+=/path to find lua modules via require()
-  - package.path can also be set explicitly: lua/?.lua;lua/?/init.lua
-  - Use --headless mode for testing lua code without opening UI
-  - selene not installed, but lua-language-server available for typechecking
+  - Pattern: Use extmark IDs and namespace management for text overlay operations
+  - Gotchas: Must clear and restore extmarks carefully to avoid orphaned overlays
+  - Context: Preview functionality needs state management across buffer changes
 ---
-## Mon Jan 19 20:55:00 +08 2026 - US-002
-- Implemented core cloaking engine with extmarks
-- Added namespace via vim.api.nvim_create_namespace('tiny-cloak')
-- Implemented cloak_line(bufnr, line_num, start_col, end_col) function
-- Uses nvim_buf_set_extmark with virt_text and virt_text_pos='overlay'
-- Cloak character repeats to match original text length
-- Verified with headless nvim test: extmark created successfully
+
+## Tue Jan 20 10:32:00 +08 2026 - US-002
+[Session: https://opncd.ai/s/]
+- Implemented auto-recloak on insert mode exit using buffer-local InsertLeave autocmd
+- Added preview_autocmd_id tracking for autocmd cleanup
+- Modified clear_preview() to clean up autocmd when re-cloaking
+- Added once=true to autocmd to prevent duplicate handlers
 - Files changed: lua/tiny-cloak/init.lua
 - **Learnings for future iterations:**
-  - extmark end_col is exclusive (end_col = start_col + length)
-  - nvim_buf_set_extmark validates end_col against line length
-  - virt_text with overlay position replaces text visually
-  - Use lua-language-server --check for type validation
+  - Pattern: Use buffer-local autocmds with cleanup tracking to prevent memory leaks
+  - Gotchas: Always clean up autocmds when the state they manage is no longer valid
+  - Context: InsertLeave autocmd fires for all exit methods (Escape, Ctrl-C, etc.)
 ---
 
-## Mon Jan 19 21:30:00 +08 2026 - US-003
-- Implemented .env file cloaking for US-003
-- Added pattern matching for API_KEY, SECRET, PASSWORD, TOKEN, CREDENTIAL, AUTH
-- Only the value portion is cloaked (key name remains visible)
-- Example: API_KEY=sk-abc123 displays as API_KEY=**********
+## Tue Jan 20 10:38:00 +08 2026 - US-003
+[Session: https://opncd.ai/s/]
+- Implemented CloakPreviewToggle command and M.preview_toggle() function
+- Added toggle logic that reveals/re-cloaks based on current preview state
+- Added BufLeave and BufWinLeave autocmds for buffer cleanup
+- Modified both preview_line() and preview_toggle() to set up cleanup autocmds
+- Added :CloakPreviewToggle user command registration
 - Files changed: lua/tiny-cloak/init.lua
 - **Learnings for future iterations:**
-  - Lua patterns use ^ for start of string, not regex ^ anchor
-  - Lua string.find uses plain patterns, not full regex (no | alternation)
-  - extmark end_col is exclusive and refers to column position, not character index
-  - Use details=true in nvim_buf_get_extmarks to get extmark options
+  - Pattern: Toggle functions should check current state and call appropriate helper functions
+  - Context: Buffer cleanup autocmds should be set up for both direct preview and toggle actions
+  - Gotchas: Once=true on autocmds prevents duplicate handlers when switching lines
 ---
 
-## Mon Jan 19 22:00:00 +08 2026 - US-004
-- Implemented JSON file cloaking functionality
-- Added cloak_json_value function to handle JSON key patterns
-- Supports case-insensitive matching of: api_key, apiKey, secret, password, token, credential, auth
-- Only cloaks string values, leaves key names visible  
-- Example: "apiKey": "sk-abc123" displays as "apiKey": "**********"
-- Tested with headless nvim and confirmed 4 extmarks created correctly for test JSON
-- Files changed: lua/tiny-cloak/init.lua, scripts/ralph/prd.json
+## Tue Jan 20 10:43:00 +08 2026 - US-004
+[Session: https://opncd.ai/s/]
+- Rewrote doc/tiny-cloak.nvim.txt with proper help documentation structure
+- Added comprehensive preview feature section with usage examples
+- Updated README.md with preview feature documentation and example keymaps
+- Added commands table with all preview commands
+- Provided example keymaps for preview functionality (no default keymaps shipped)
+- Files changed: README.md, doc/tiny-cloak.nvim.txt
 - **Learnings for future iterations:**
-  - Lua pattern matching for JSON requires careful handling of quote characters
-  - String.find with plain mode (third argument true) is essential for finding matching quotes
-  - JSON patterns should handle both api_key and apiKey variants with [_%-]? pattern
-  - vim.api.nvim_buf_get_option(bufnr, 'filetype') returns 'json' for .json files
+  - Pattern: Help documentation should follow standard Neovim help tag conventions
+  - Context: README updates should include practical examples and keymap suggestions
+  - Gotchas: Replace template documentation completely rather than modifying existing content
 ---
-
-## Mon Jan 19 22:15:00 +08 2026 - US-005
-- Implemented YAML file cloaking functionality for US-005
-- Added cloak_yaml_value function to handle YAML key patterns
-- Supports case-insensitive matching of: api_key, apiKey, secret, password, token, credential, auth
-- Only cloaks string values, leaves key names visible
-- Handles both quoted (single/double) and unquoted values
-- Example: api_key: sk-abc123 displays as api_key: **********
-- Tested with both .yaml and .yml file extensions
-- Verified correct handling of empty strings, comments, and whitespace
-- Files changed: lua/tiny-cloak/init.lua, scripts/ralph/prd.json
-- **Learnings for future iterations:**
-  - YAML parsing requires careful handling of quote characters vs unquoted values
-  - String.find with plain mode (third argument true) is essential for finding matching quotes
-  - YAML patterns should handle both api_key and apiKey variants with [_%-]? pattern
-  - Need to respect comment syntax (#) in YAML when determining value boundaries
-  - vim.api.nvim_buf_get_option(bufnr, 'filetype') returns 'yaml' or 'yml' for YAML files
-
-## Mon Jan 19 23:00:00 +08 2026 - US-006 US-007 US-008
-- Implemented autocommands for automatic buffer attachment (US-006)
-- Created TinyCloak autocommand group with BufEnter, BufRead, BufWinEnter, TextChanged, TextChangedI events
-- Added CloakToggle, CloakEnable, CloakDisable user commands (US-007, US-008)
-- Fixed .env filename pattern matching bug - changed from ^%.env to %.env$ 
-- Verified autocommands work correctly for .env and JSON files
-- TextChanged autocommand properly re-applies cloaking when new secrets are added
-- Commands correctly toggle cloaking state globally across all buffers
-- Files changed: lua/tiny-cloak/init.lua, scripts/ralph/prd.json, scripts/ralph/progress.txt
-- **Learnings for future iterations:**
-  - .env* autocommand patterns only match files starting with .env, not ending with .env
-  - 'BufRead' autocommand is automatically converted to 'BufReadPost' by Neovim
-  - vim.api.nvim_buf_clear_namespace should be called before re-applying extmarks to avoid duplicates
-  - TextChanged autocommands trigger immediately after buffer modifications
-  - User commands should be created in setup() to ensure availability after plugin loading
-
-## Mon Jan 19 23:15:00 +08 2026 - US-009 US-010
-- Verified US-009: configurable cloak character works correctly
-- Custom cloak_character '•' properly shows ••••••••••••••• in extmarks instead of ******
-- Verified US-010: configurable file patterns work correctly  
-- setup({ file_patterns = {'*.json'} }) restricts cloaking to only JSON files
-- .env files show 0 extmarks, JSON files show 1+ extmarks when patterns are filtered
-- Both features use vim.tbl_deep_extend for proper config merging with defaults
-- All acceptance criteria now complete for all user stories (US-001 through US-010)
-- Files changed: scripts/ralph/prd.json, scripts/ralph/progress.txt
-- **Learnings for future iterations:**
-  - Custom file patterns work by filtering which file types get autocommands attached
-  - Configurable options work through vim.tbl_deep_extend merging with defaults
-  - All user stories now complete - plugin fully functional with all requested features

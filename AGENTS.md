@@ -1,190 +1,99 @@
-# AGENTS.md - tiny-cloak.nvim Development Guide
-
-This document provides guidelines for agentic coding agents working on tiny-cloak.nvim.
-
-## Project Overview
-
-tiny-cloak.nvim is a lightweight Neovim plugin that masks sensitive data (API keys, secrets, tokens) in `.env`, JSON, and YAML files. The plugin uses Neovim's extmarks API to overlay text without modifying buffer content.
+# tiny-cloak.nvim Development Guide
 
 ## Build, Lint, and Test Commands
 
-### Makefile Commands
-
 ```bash
-make test        # Run all tests
-make test-file   # Run test file
-make format      # Format Lua files
-make lint        # Check formatting
-make install     # Install with LuaRocks
-make dev-deps    # Install development dependencies
-make clean       # Clean build artifacts
-make help        # Show this help
+make test          # Run all tests
+make format        # Format Lua files (stylua)
+make lint          # Check formatting without changes
+make install       # Install with LuaRocks
+make dev-deps      # Install dev dependencies
+make clean         # Clean build artifacts
 ```
 
-### Running Tests
-
+**Run single test:** Tests use a custom runner without individual test filtering. To test specific functionality, run all tests:
 ```bash
-# Run all tests (uses Neovim headless)
 nvim --headless -c "luafile test/runner.lua" -c "qall!"
-
-# Run tests via LuaRocks test command
-luarocks test tiny-cloak.nvim-1.0.0-1.rockspec
-
-# Tests use a custom runner at test/runner.lua
-# LuaRocks uses test.lua as the test script entry point
 ```
 
-### Code Formatting
-
+**Via LuaRocks:**
 ```bash
-# Format all Lua files with StyLua
-stylua lua/
-stylua test/
-
-# Check formatting without applying changes
-stylua --check lua/
-```
-
-### LuaRocks Package Management
-
-```bash
-# Install dependencies
-luarocks install --deps-only tiny-cloak.nvim-1.0.0-1.rockspec
-
-# Install with test dependencies
-luarocks install tiny-cloak.nvim-1.0.0-1.rockspec
-
-# Run tests via LuaRocks (uses shell test type with nvim)
 luarocks test tiny-cloak.nvim-1.0.0-1.rockspec
 ```
 
 ## Code Style Guidelines
 
 ### File Structure
-
-- Main module: `lua/tiny-cloak/init.lua`
-- Test entry: `test.lua` (LuaRocks test script)
+- Main: `lua/tiny-cloak/init.lua`
 - Tests: `test/runner.lua`
 - Plugin entry: `plugin/tiny-cloak.nvim.lua`
-- Documentation: `doc/tiny-cloak.nvim.txt`
+- Test entry: `test.lua` (LuaRocks)
 
-### Formatting (StyLua Configuration)
-
-- **Column width**: 100 characters
-- **Line endings**: Unix
-- **Indent type**: Spaces (2 spaces)
-- **Quote style**: AutoPreferSingle
-- **Call parentheses**: Always
-
-Always run `stylua` after writing Lua code.
+### Formatting (StyLua)
+- Column width: 100
+- Indent: 2 spaces
+- Quote style: AutoPreferSingle
+- Call parentheses: Always
+- Run `stylua .` after changes
 
 ### Naming Conventions
+| Type | Convention | Example |
+|------|------------|---------|
+| Module table | `M` | `local M = {}` |
+| Functions/vars | snake_case | `cloak_buffer`, `file_patterns` |
+| Constants | UPPER_SNAKE_CASE | `SENSITIVE_KEY_PATTERNS` |
+| Autocmd groups | PascalCase | `TinyCloak` |
+| Namespaces | kebab-case | `tiny-cloak` |
+| Commands | CamelCase | `CloakToggle` |
 
-- **Module**: `tiny-cloak` (kebab-case for directory names)
-- **Module table**: `M` (exported module at bottom of file)
-- **Functions**: snake_case (e.g., `cloak_buffer`, `trim_line`)
-- **Variables**: snake_case (e.g., `file_patterns`, `key_end`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `SENSITIVE_KEY_PATTERNS`)
-- **Autocmd groups**: PascalCase (e.g., `TinyCloak`)
-- **Namespaces**: kebab-case with dots (e.g., `vim.api.nvim_create_namespace('tiny-cloak')`)
-- **Commands**: CamelCase (e.g., `CloakToggle`, `CloakEnable`)
-
-### Imports and Dependencies
-
-- Use `local M = require('tiny-cloak')` to import the main module
-- No external Lua dependencies (zero external dependencies)
-- Use Neovim APIs via `vim.api.nvim_*` and `vim.fn.*`
-- Avoid global namespace pollution; always use `local` for variables
-
-### Types and Type Annotations
-
-- Lua is dynamically typed; no type annotations required
-- Use clear, descriptive variable names to convey intent
-- For complex data structures, define default configs at module level
+### Imports & Dependencies
+- Use `local M = require('tiny-cloak')`
+- Zero external dependencies
+- Use Neovim APIs: `vim.api.nvim_*`, `vim.fn.*`
+- Always use `local` for variables
 
 ### Error Handling
-
-- Use guard clauses for early returns on invalid input
-- `if not condition then return end` pattern for preconditions
-- Let Neovim API errors propagate (e.g., invalid bufnr)
-- No exceptions; use return values and nil checks
-
-### Code Patterns
-
-**Module structure:**
 ```lua
-local M = {}
-
-local default_config = { -- private config
-  file_patterns = { '.env*', '*.json', '*.yaml', '*.yml' },
-  cloak_character = '*',
-}
-
-local namespace = vim.api.nvim_create_namespace('tiny-cloak')
-local enabled = true
-
--- Private helper functions (local)
-local function helper() end
-
--- Public API (M.function_name)
-function M.setup(opts) end
-
-return M
-```
-
-**Guard clause pattern:**
-```lua
+-- Guard clause pattern
 function M.cloak_buffer(bufnr)
-  if not enabled then
-    return
-  end
+  if not enabled then return end
   -- ... rest of function
 end
-```
 
-**Config merging pattern:**
-```lua
+-- Config merging
 function M.setup(opts)
   opts = opts or {}
   M.config = vim.tbl_deep_extend('force', default_config, opts)
 end
 ```
 
-**Autocmd setup pattern:**
+### Module Pattern
 ```lua
-vim.api.nvim_create_augroup('TinyCloak', {})
+local M = {}
 
-vim.api.nvim_create_autocmd({ 'BufEnter', 'BufRead' }, {
-  group = 'TinyCloak',
-  pattern = config.file_patterns,
-  callback = function(args)
-    M.cloak_buffer(args.buf)
-  end,
-})
+local default_config = {
+  file_patterns = { '.env*', '*.json', '*.yaml', '*.yml' },
+}
+
+local namespace = vim.api.nvim_create_namespace('tiny-cloak')
+local enabled = true
+
+local function helper() end  -- Private helper
+
+function M.setup(opts) end   -- Public API
+
+return M
 ```
 
-### Testing Patterns (custom runner)
-
-- Use `describe` blocks for grouping related tests
-- Use `test()` function for individual test cases
-- Assertions use `assert(condition, message)` function
-- Clean up test buffers with `vim.api.nvim_buf_delete(bufnr, { force = true })`
-- Tests run in Neovim headless mode with real buffers
-- Always create a fresh buffer for each test
-- Tests use `os.exit()` for proper exit codes
-- The `.busted` file configures nlua as the Lua interpreter
-- LuaRocks uses test.lua as the test script entry point
-
-### Documentation
-
-- Document public API in `doc/tiny-cloak.nvim.txt` using Neovim help tags
-- Add `:help tiny-cloak` entries for commands and configuration options
-- Keep README.md updated with features and usage examples
+### Testing Patterns
+- Use `describe()` blocks and `test()` functions
+- Assertions: `assert(condition, message)`
+- Clean up: `vim.api.nvim_buf_delete(bufnr, { force = true })`
+- Tests run in Neovim headless mode
+- Exit codes via `os.exit()` (0=pass, 1=fail)
 
 ### General Principles
-
-- Minimal footprint with no external dependencies
-- Zero configuration required for common use cases
+- Minimal footprint, zero external dependencies
 - Use Neovim native APIs (extmarks, autocmds, user commands)
 - Keep functions focused and single-purpose
-- Avoid unnecessary abstraction; prefer simple, readable code
+- Document public API in `doc/tiny-cloak.nvim.txt`

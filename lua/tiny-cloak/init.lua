@@ -9,7 +9,11 @@ local default_config = {
 local namespace = vim.api.nvim_create_namespace('tiny-cloak')
 local enabled = true
 
--- Shared patterns for JSON/YAML sensitive keys
+local preview_augroup = vim.api.nvim_create_augroup('TinyCloakPreview', { clear = true })
+local preview_active_bufnr = nil
+local preview_line_num = nil
+local preview_extmarks = {}
+
 local SENSITIVE_KEY_PATTERNS = {
   'api_key',
   'apiKey',
@@ -254,11 +258,122 @@ function M.cloak_line(bufnr, line_num, start_col, end_col)
   local cloak_char = config.cloak_character
   local cloak_text = string.rep(cloak_char, line_length)
 
-  vim.api.nvim_buf_set_extmark(bufnr, namespace, line_num, start_col, {
+  return vim.api.nvim_buf_set_extmark(bufnr, namespace, line_num, start_col, {
     end_col = end_col,
     virt_text = { { cloak_text, 'Comment' } },
     virt_text_pos = 'overlay',
   })
+end
+
+local function clear_preview()
+  if not preview_active_bufnr then
+    return
+  end
+
+  if not vim.api.nvim_buf_is_valid(preview_active_bufnr) then
+    preview_active_bufnr = nil
+    preview_line_num = nil
+    preview_extmarks = {}
+    return
+  end
+
+  -- In insert mode, keep revealed
+  if vim.api.nvim_get_mode().mode:find('i') then
+    preview_active_bufnr = nil
+    preview_line_num = nil
+    preview_extmarks = {}
+    return
+  end
+
+  M.cloak_buffer(preview_active_bufnr)
+
+  preview_active_bufnr = nil
+  preview_line_num = nil
+  preview_extmarks = {}
+end
+
+local function get_line_extmarks(bufnr, line_num)
+  local extmarks = vim.api.nvim_buf_get_extmarks(
+    bufnr,
+    namespace,
+    { line_num, 0 },
+    { line_num, -1 },
+    { details = true }
+  )
+
+  local cloak_extmarks = {}
+  for _, extmark in ipairs(extmarks) do
+    local _extmark_id, _row, start_col, details = unpack(extmark)
+    if details and details.virt_text and #details.virt_text > 0 then
+      table.insert(cloak_extmarks, {
+        start_col = start_col,
+        end_col = details.end_col,
+        cloak_text = details.virt_text[1][1],
+      })
+    end
+  end
+
+  return cloak_extmarks
+end
+
+function M.preview_line()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local cursor_pos = vim.api.nvim_win_get_cursor(0)
+  local line_num = cursor_pos[1] - 1
+
+  local line_extmarks = get_line_extmarks(bufnr, line_num)
+
+  if #line_extmarks == 0 then
+    clear_preview()
+    return
+  end
+
+  if preview_active_bufnr == bufnr and preview_line_num == line_num then
+    return
+  end
+
+  clear_preview()
+
+  preview_active_bufnr = bufnr
+  preview_line_num = line_num
+  preview_extmarks = line_extmarks
+
+  vim.api.nvim_buf_clear_namespace(bufnr, namespace, line_num, line_num + 1)
+
+  vim.api.nvim_create_autocmd('InsertLeave', {
+    group = preview_augroup,
+    buffer = bufnr,
+    callback = clear_preview,
+    once = true,
+  })
+
+  vim.api.nvim_create_autocmd({ 'BufLeave', 'BufWinLeave' }, {
+    group = preview_augroup,
+    buffer = bufnr,
+    callback = clear_preview,
+    once = true,
+  })
+end
+
+function M.preview_toggle()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local cursor_pos = vim.api.nvim_win_get_cursor(0)
+  local line_num = cursor_pos[1] - 1
+
+  local line_extmarks = get_line_extmarks(bufnr, line_num)
+
+  if #line_extmarks == 0 then
+    clear_preview()
+    return
+  end
+
+  if preview_active_bufnr == bufnr and preview_line_num == line_num then
+    clear_preview()
+    return
+  end
+
+  clear_preview()
+  M.preview_line()
 end
 
 function M.setup(opts)
@@ -278,11 +393,20 @@ function M.setup(opts)
     end,
   })
 
-  vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedI' }, {
+  -- Re-cloak on text changes in normal mode
+  vim.api.nvim_create_autocmd({ 'TextChanged' }, {
     group = 'TinyCloak',
     pattern = config.file_patterns,
     callback = function(args)
       M.cloak_buffer(args.buf)
+    end,
+  })
+
+  vim.api.nvim_create_autocmd({ 'TextChangedI' }, {
+    group = 'TinyCloak',
+    pattern = config.file_patterns,
+    callback = function(args)
+      -- Skip re-cloak in insert mode
     end,
   })
 
@@ -294,9 +418,25 @@ function M.setup(opts)
     end,
   })
 
+  vim.api.nvim_create_autocmd('InsertEnter', {
+    group = 'TinyCloak',
+    pattern = config.file_patterns,
+    callback = function(args)
+      if not enabled then
+        return
+      end
+      local cursor_pos = vim.api.nvim_win_get_cursor(0)
+      local line_num = cursor_pos[1] - 1
+      if #get_line_extmarks(args.buf, line_num) > 0 then
+        M.preview_line()
+      end
+    end,
+  })
+
   vim.api.nvim_create_user_command('CloakToggle', M.toggle, {})
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
+  vim.api.nvim_create_user_command('CloakPreviewToggle', M.preview_toggle, {})
 end
 
 return M

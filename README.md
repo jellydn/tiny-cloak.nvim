@@ -59,17 +59,37 @@ SECRET_TOKEN=example-secret       SECRET_TOKEN=************
 
 ## ⌨️ Commands
 
-| Command         | Description                                  |
-| --------------- | -------------------------------------------- |
-| `:CloakToggle`  | Toggle cloaking on/off globally              |
-| `:CloakEnable`  | Enable cloaking (no-op if already enabled)   |
-| `:CloakDisable` | Disable cloaking (no-op if already disabled) |
+| Command               | Description                                  |
+| --------------------- | -------------------------------------------- |
+| `:CloakToggle`        | Toggle cloaking on/off globally              |
+| `:CloakEnable`        | Enable cloaking (no-op if already enabled)   |
+| `:CloakDisable`       | Disable cloaking (no-op if already disabled) |
+| `:CloakPreviewToggle` | Toggle preview on current line               |
 
-### Recommended Keymap
+### Recommended Keymaps
 
 ```lua
+-- Toggle cloaking globally
 vim.keymap.set("n", "<leader>ct", "<cmd>CloakToggle<cr>", { desc = "Toggle cloak" })
+
+-- Preview current line (toggle reveal/cloak)
+vim.keymap.set("n", "<leader>cp", "<cmd>CloakPreviewToggle<cr>", { desc = "Preview line" })
 ```
+
+## 👁️ Preview Feature
+
+The plugin automatically reveals cloaked values when you enter insert mode for seamless editing:
+
+- **Auto-reveal on Insert**: Enter insert mode on a cloaked line → value is revealed
+- **Auto-recloak on Exit**: Press `Escape` → value is automatically re-cloaked
+- **Manual Toggle**: `:CloakPreviewToggle` to reveal/hide in normal mode without editing
+
+### Example Workflow
+
+1. Navigate to a line with cloaked content
+2. Press `i` to enter insert mode → value auto-reveals
+3. Edit the value
+4. Press `Escape` → value auto-recloaks
 
 ## ⚙️ Configuration
 

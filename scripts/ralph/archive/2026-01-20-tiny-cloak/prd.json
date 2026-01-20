@@ -17,8 +17,8 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": true,
-      "notes": "Consolidated into CloakPreviewToggle. The preview_line() function is internal, called by preview_toggle()."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-002",
@@ -34,8 +34,8 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "InsertLeave autocmd is set up when CloakPreviewToggle reveals a line."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-003",
@@ -52,8 +52,8 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": "This is now the only preview command. Combines toggle behavior with auto-recloak on InsertLeave."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-004",
@@ -66,8 +66,8 @@
         "make lint passes"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "Updated README and docs to reflect single CloakPreviewToggle command."
+      "passes": false,
+      "notes": ""
     }
   ]
 }
